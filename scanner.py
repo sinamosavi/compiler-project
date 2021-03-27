@@ -17,24 +17,34 @@ dfa = {('start', 'DIGIT'): 'number',
 	  }
 
 def type(str):
-    if str.isdigit():
-        return 'DIGIT'
-    elif str == '*':
-        return 'STAR'
-    elif str in [',', ';', ':', '+', '-', ']', '[', '{', '}', '<', '(', ')']:
-        return 'SYMBOL'
-    elif str == '=':
-        return 'EQUAL'
-    elif str.isalpha():
-        return 'LETTER'
-    elif re.match('[ \t]+', str):
-        return 'SKIP'
-    elif str == '/':
-        return 'COMMENT'
-    elif re.match('\n', str):
-        return 'NEWLINE'
-    else:
-        return 'ERROR'
+	if str.isdigit():
+		return 'DIGIT'
+	elif str == '*':
+		return 'STAR'
+	elif str in [',', ';', ':', '+', '-', ']', '[', '{', '}', '<', '(', ')']:
+		return 'SYMBOL'
+	elif str == '=':
+		return 'EQUAL'
+	elif str.isalpha():
+		return 'LETTER'
+	elif str == '/':
+		return 'COMMENT'
+	elif re.match('[ \t]+', str):
+		return 'SKIP'
+	elif re.match('\n', str):
+		return 'NEWLINE'
+	elif str in ['', '\r', '\f', '\v']:
+		return 'WHITESPACE'
+	else:
+		return 'ERROR'
+		
+def old_next_state(state, char):
+	return dfa[state, type(char)]
+	
+def next_state(state, char):
+	#Todo
+	pass
+	
 		
 def scan(filename):
 	result = []
@@ -46,12 +56,11 @@ def scan(filename):
 			str = []
 			for i in range(len(line)):
 				letter = line[i]
-				current = letter
 				letter_type = type(letter)
 				print(letter + ": " + letter_type)
 				old_state = state
 				#Go to the new state
-				state = dfa[old_state, letter_type]
+				state = old_next_state(old_state, letter)
 				
 				if(state == old_state):
 					pass
@@ -61,7 +70,7 @@ def scan(filename):
 						result.append(''.join(str))
 						out_file.write("(" + ''.join(str) + ")")
 					str.clear()
-				str.append(current)
+				str.append(letter)
 			
 			#Add endline
 			out_file.write('\n')
