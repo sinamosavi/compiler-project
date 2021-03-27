@@ -13,15 +13,16 @@ EOF = '$'
 class Scanner:
 	def __init__(self, input_path):
 		with open(input_path, 'r') as input_file:
-			self.lines = input_file.readlines(input_file)
+			self.lines = input_file.readlines()
 
 		self.inside_comment = False # Are we inside comment?
 		self.pointer = 0	# pointer in current line
-		self.line_number = 1
+		self.line_number = 0
 		self.line = self.lines[0] # current line
 		self.token = ''
 		self.token_type = None
 		self.error_msg = ''
+		self.out_file = open("tokens.txt", "w")
 		
 
 	def type(self, str):
@@ -121,10 +122,17 @@ class Scanner:
 		self.pointer += 1
 		return False
 
-
-
 	def get_next_token(self):
+		if(self.pointer >= len(self.line)):
+			#print("End of Line!")
+			# Go to the next line 
+			self.line_number += 1
+			self.line = self.lines[self.line_number]
+			self.pointer = 0
+			self.token = ''
+			
 		char = self.line[self.pointer]
+		#print("At character: " + char)
 		if self.type(char) == 'DIGIT':
 			is_error = self.number_state()
 		elif self.type(char) == 'LETTER':
@@ -144,53 +152,32 @@ class Scanner:
 		
 	def scan(self, filename):
 		result = []
-		out_file = open("tokens.txt", "w")
+		old_line_number = -1
 		while True:
 			is_error = self.get_next_token()
 			if is_error:
 				pass # write (self.line_number, self.token, self.error_msg) in lexical_errors.txt
 			else:
-				pass # write (self.line_number, self.token, self.token_type)
+				if(self.token_type != 'WHITESPACE'):
+					# Will write line number only if we recently switched lines
+					if(old_line_number != self.line_number):
+						if(self.line_number > 0):
+							self.out_file.write("\n")
+							print()
+						self.out_file.write(str(self.line_number + 1) + ".\t")
+						print(str(self.line_number + 1) + ".\t", end = '')
+						old_line_number = self.line_number
+					print("(" + self.token_type + ", " + self.token + ")", end = '')
+					# Writes the token into tokens.txt
+					self.out_file.write("(" + self.token_type + ", " + self.token + ") ")
 
 			self.token = '' # new token started
-
-		# with open(filename) as file:
-		# 	for line in file:
-		# 		line = ''.join(line + ' ')
-		# 		str = []
-		# 		for i in range(len(line)):
-		# 			letter = line[i]
-
-		# 			letter_type = self.type(letter)
-
-		# 			print(letter + ": " + letter_type)
-		# 			old_state = state
-		# 			#Go to the new state
-		# 			state = old_next_state(old_state, letter)
-					
-		# 			if(state == old_state):
-		# 				pass
-		# 			#Write the previous token
-		# 			else:
-		# 				if(str):
-		# 					result.append(''.join(str))
-		# 					out_file.write("(" + ''.join(str) + ")")
-		# 				str.clear()
-		# 			str.append(letter)
-				
-		# 		#Add endline
-		# 		out_file.write('\n')
 					
 		return result
-		
-	
-	
-
 
 if __name__ == '__main__':
-
 	#Sample input from command line: "python scanner.py input.txt"
 	input = sys.argv[1]	
-	scanner = Scanner(input_path=input)
+	scanner = Scanner(input_path = input)
+	print("Tokens:")
 	scanner.scan(input)
-	print("\n" + "Tokens:" + "\n")
