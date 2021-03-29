@@ -14,9 +14,9 @@ EOF = '$'
 
 class Scanner:
 	def __init__(self, input_path):
-		with open(input_path, 'r') as input_file:
+		with open(input_path, 'r', encoding='utf-8-sig') as input_file:
 			self.lines = input_file.readlines()
-
+		#print(self.lines)
 		self.pointer = 0	# pointer in current line
 		self.line_number = 0
 		self.comment_start_line_number = 0
