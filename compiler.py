@@ -1,3 +1,7 @@
+# Authors:
+# Ainaz Eftekhar 96105564
+# Sina Mousavi 95109553
+
 from scanner import Scanner
 
 if __name__ == '__main__':

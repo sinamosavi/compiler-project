@@ -1,3 +1,7 @@
+# Authors:
+# Ainaz Eftekhar 96105564
+# Sina Mousavi 95109553
+
 s1 = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'}
 s2 = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'}
 LETTER = s1.union(s2)
@@ -15,10 +19,10 @@ class Scanner:
 		with open(input_path, 'r', encoding='utf-8-sig') as input_file:
 			self.lines = input_file.readlines()
 
-		self.pointer = 0 # pointer in current line
+		self.pointer = 0 # Pointer in current line
 		self.line_number = 0
 		self.comment_start_line_number = 0
-		self.line = self.lines[0] # current line
+		self.line = self.lines[0] # Current line
 		self.token = ''
 		self.token_type = None
 		self.error_msg = ''
@@ -51,15 +55,15 @@ class Scanner:
 		char = self.line[self.pointer]
 		return char
 
-	def number_state(self): # state 3
+	def number_state(self): # State 3
 		self.token_type = 'NUM'
 		other = SYMBOL.union(WHITE_SPACE).union('/')
 		self.token = self.line[self.pointer]
 		while True:
 			char = self.read_next_pointer()
-			if char in DIGIT:	# stay in state 1
+			if char in DIGIT:	# Stay in state 1
 				self.token += char
-			elif char in other:	# valid NUM token
+			elif char in other:	# Valid NUM token
 				return False
 			else:	# Invalid number
 				self.error_msg = 'Invalid number'
@@ -67,14 +71,14 @@ class Scanner:
 				self.pointer += 1
 				return True # Panic error
 
-	def keyword_id_state(self): # state 1
+	def keyword_id_state(self): # State 1
 		other = SYMBOL.union(WHITE_SPACE).union('/')
 		self.token = self.line[self.pointer]
 		while True:
 			char = self.read_next_pointer()
-			if char in DIGIT.union(LETTER):	# stay in state 1
+			if char in DIGIT.union(LETTER):	# Stay in state 1
 				self.token += char
-			elif char in other:	# valid ID/KEYWORD token
+			elif char in other:	# Valid ID/KEYWORD token
 				if self.token in KEYWORDS: 
 					self.token_type = 'KEYWORD'
 				else: 
@@ -88,13 +92,13 @@ class Scanner:
 				self.pointer += 1
 				return True # Panic error
 
-	def symbol_state(self): # state 5
+	def symbol_state(self): # State 5
 		self.token_type = 'SYMBOL'
 		self.token = self.line[self.pointer]
 		self.pointer += 1
 		return False
 
-	def equal_state(self): # state 6
+	def equal_state(self): # State 6
 		self.token_type = 'SYMBOL'
 		char = self.read_next_pointer()
 		if char == '=': # token '=='
@@ -105,7 +109,7 @@ class Scanner:
 			self.token = '='
 			return False
 
-	def star_state(self):	# state 8
+	def star_state(self):	# State 8
 		self.token_type = 'SYMBOL'
 		char = self.read_next_pointer()
 		if char == '/': 	
@@ -117,7 +121,7 @@ class Scanner:
 			self.token = '*'
 			return False
 
-	def comment_state(self):	# state a
+	def comment_state(self):	# State a
 		self.token_type = 'COMMENT'
 		char = self.read_next_pointer()
 		if char == '/':
@@ -129,17 +133,17 @@ class Scanner:
 			self.token = '/'
 			# This line created a bug with in Test 12
 			#self.pointer += 1
-			return True # panic error
+			return True # Panic error
 
-	def comment_line_state(self):	# state b
+	def comment_line_state(self):	# State b
 		char = self.read_next_pointer()
-		while char != '\n':	# read to the end of the current line
+		while char != '\n':	# Read to the end of the current line
 			self.pointer += 1
 			if self.pointer >= len(self.line): break
 			char = self.line[self.pointer]
 		return False	
 
-	def comment_paragraph_state(self):	# state d
+	def comment_paragraph_state(self):	# State d
 		self.pointer += 1
 		self.token = '/*'
 		state = 'd'
@@ -147,7 +151,7 @@ class Scanner:
 		while True:
 			if(self.pointer >= len(self.line)): # Go to next line
 				self.line_number += 1
-				if self.line_number >= len(self.lines):		# end of the code
+				if self.line_number >= len(self.lines):		# End of the code
 					self.error_msg = 'Unclosed comment'
 					if(len(self.token) > 7):
 						self.token = f'{self.token[:7]}...'
@@ -157,7 +161,7 @@ class Scanner:
 				self.pointer = 0
 
 			while state == 'd' and self.pointer < len(self.line): 
-				# stay in state d
+				# Stay in state d
 				char = self.line[self.pointer]
 				self.token += char
 				self.pointer += 1
@@ -165,17 +169,17 @@ class Scanner:
 
 			while state == 'e' and self.pointer < len(self.line):
 
-				# stay in state e
+				# Stay in state e
 				char = self.line[self.pointer]
 				self.token += char
 				self.pointer += 1
 				if char not in ['*', '/']: 
 					state = 'd'
 				elif char == '/': 
-					return False # state 'c', end of comment paragraph
+					return False # State 'c', end of comment paragraph
 
 
-	def whitespace_state(self):   # state f
+	def whitespace_state(self):   # State f
 		self.token_type = 'WHITESPACE'
 		self.token = self.line[self.pointer]
 		self.pointer += 1
@@ -215,7 +219,7 @@ class Scanner:
 			if(self.pointer >= len(self.line)):
 				# Go to the next line 
 				self.line_number += 1
-				if self.line_number >= len(self.lines):		# end of the code
+				if self.line_number >= len(self.lines):		# End of the code
 					break
 				self.line = self.lines[self.line_number]
 				self.pointer = 0
@@ -228,32 +232,24 @@ class Scanner:
 				else:
 					line_number = self.line_number
 				if(old_line_number_error != self.line_number):
-					#print()
 					if(old_line_number_error != -1):
 						self.error_file.write("\n")
 					self.error_file.write(str(line_number + 1) + ".\t")
-					#print(str(line_number + 1) + ".\t", end = '')
 					old_line_number_error = line_number
 				else:
-					#print(" ", end='')
 					self.error_file.write(" ")
-				#print("(" + self.token + ", " + self.error_msg + ")", end = '')
 				# Writes the error into lexical_errors.txt
 				self.error_file.write("(" + self.token + ", " + self.error_msg + ")")
 			else:
 				if(self.token_type not in ['WHITESPACE', 'COMMENT']):
 					# Will write line number only if we recently switched lines
 					if(old_line_number_token != self.line_number):
-						#print()
 						if(old_line_number_token != -1):
 							self.tokens_file.write("\n")
 						self.tokens_file.write(str(self.line_number + 1) + ".\t")
-						#print(str(self.line_number + 1) + ".\t", end = '')
 						old_line_number_token = self.line_number
 					else:
-						#print(" ", end='')
 						self.tokens_file.write(" ")
-					#print("(" + self.token_type + ", " + self.token + ")", end = '')
 					# Writes the token into tokens.txt
 					self.tokens_file.write("(" + self.token_type + ", " + self.token + ")")
 
@@ -265,9 +261,8 @@ class Scanner:
 			self.symbol_file.write(str(symbol_number) + ".\t" + id + "\n")
 			symbol_number += 1
 			
-		self.token = '' # new token started
+		self.token = '' # New token started
 
 		if old_line_number_error == -1:
 			self.error_file.write("There is no lexical error.")	
 		return result
-
