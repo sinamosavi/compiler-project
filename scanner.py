@@ -4,7 +4,7 @@ s1 = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s
 s2 = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'}
 LETTER = s1.union(s2)
 DIGIT = {'7', '9', '2', '4', '3', '5', '8', '1', '0', '6'}
-WHITE_SPACE = {' ', '\r', '\f', '\v', '\x0c', '\x0b', '\n', '\t'}
+WHITE_SPACE = {' ', '\r', '\f', '\v', '\n', '\t'}
 SYMBOL = {';', ':', ',', '[', ']', '(', ')', '{', '}', '+', '-', '*', '=', '<'}
 KEYWORDS = {'if', 'else', 'void', 'int', 'while', 'break', 'switch', 'default', 'case', 'return', 'for'}
 KEYWORDS_list = ['if', 'else', 'void', 'int', 'while', 'break', 'switch', 'default', 'case', 'return', 'for']
