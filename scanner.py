@@ -127,7 +127,8 @@ class Scanner:
 		else:
 			self.error_msg = 'Invalid input'
 			self.token = '/'
-			self.pointer += 1
+			# This line created a bug with in Test 12
+			#self.pointer += 1
 			return True # panic error
 
 	def comment_line_state(self):	# state b
