@@ -1,5 +1,3 @@
-import sys
-
 s1 = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'}
 s2 = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'}
 LETTER = s1.union(s2)
@@ -25,9 +23,9 @@ class Scanner:
 		self.token_type = None
 		self.error_msg = ''
 		self.identifiers = []
-		self.tokens_file = open("our_tokens.txt", "w")
-		self.error_file = open("our_lexical_errors.txt", "w")
-		self.symbol_file = open("our_symbol_table.txt", "w")
+		self.tokens_file = open("tokens.txt", "w")
+		self.error_file = open("lexical_errors.txt", "w")
+		self.symbol_file = open("symbol_table.txt", "w")
 
 
 	def type(self, str):
@@ -150,7 +148,8 @@ class Scanner:
 				self.line_number += 1
 				if self.line_number >= len(self.lines):		# end of the code
 					self.error_msg = 'Unclosed comment'
-					self.token = f'{self.token[:7]}...'
+					if(len(self.token) > 7):
+						self.token = f'{self.token[:7]}...'
 					return True # Panic error
 
 				self.line = self.lines[self.line_number]
@@ -271,12 +270,3 @@ class Scanner:
 			self.error_file.write("There is no lexical error.")	
 		return result
 
-if __name__ == '__main__':
-	#Sample input from command line: "python scanner.py input.txt"
-	input = sys.argv[1]	
-	scanner = Scanner(input_path = input)
-	print("Tokens:")
-	scanner.scan(input)
-
-
-	
