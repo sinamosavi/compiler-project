@@ -14,8 +14,8 @@ class Scanner:
 	def __init__(self, input_path):
 		with open(input_path, 'r', encoding='utf-8-sig') as input_file:
 			self.lines = input_file.readlines()
-		#print(self.lines)
-		self.pointer = 0	# pointer in current line
+
+		self.pointer = 0 # pointer in current line
 		self.line_number = 0
 		self.comment_start_line_number = 0
 		self.line = self.lines[0] # current line
@@ -228,32 +228,32 @@ class Scanner:
 				else:
 					line_number = self.line_number
 				if(old_line_number_error != self.line_number):
-					print()
+					#print()
 					if(old_line_number_error != -1):
 						self.error_file.write("\n")
 					self.error_file.write(str(line_number + 1) + ".\t")
-					print(str(line_number + 1) + ".\t", end = '')
+					#print(str(line_number + 1) + ".\t", end = '')
 					old_line_number_error = line_number
 				else:
-					print(" ", end='')
+					#print(" ", end='')
 					self.error_file.write(" ")
-				print("(" + self.token + ", " + self.error_msg + ")", end = '')
+				#print("(" + self.token + ", " + self.error_msg + ")", end = '')
 				# Writes the error into lexical_errors.txt
 				self.error_file.write("(" + self.token + ", " + self.error_msg + ")")
 			else:
 				if(self.token_type not in ['WHITESPACE', 'COMMENT']):
 					# Will write line number only if we recently switched lines
 					if(old_line_number_token != self.line_number):
-						print()
+						#print()
 						if(old_line_number_token != -1):
 							self.tokens_file.write("\n")
 						self.tokens_file.write(str(self.line_number + 1) + ".\t")
-						print(str(self.line_number + 1) + ".\t", end = '')
+						#print(str(self.line_number + 1) + ".\t", end = '')
 						old_line_number_token = self.line_number
 					else:
-						print(" ", end='')
+						#print(" ", end='')
 						self.tokens_file.write(" ")
-					print("(" + self.token_type + ", " + self.token + ")", end = '')
+					#print("(" + self.token_type + ", " + self.token + ")", end = '')
 					# Writes the token into tokens.txt
 					self.tokens_file.write("(" + self.token_type + ", " + self.token + ")")
 
