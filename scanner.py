@@ -124,9 +124,15 @@ class Scanner:
 			self.token = '*/'
 			self.error_msg = 'Unmatched comment'
 			return True 	# Panic error
-		else:
+		elif char in VALID_CHARS:
 			self.token = '*'
 			return False
+		else:
+			self.error_msg = 'Invalid input'
+			self.token = '*'
+			self.token += char
+			self.pointer += 1
+			return True # Panic error
 
 	def comment_state(self):	# State a
 		self.token_type = 'COMMENT'
