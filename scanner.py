@@ -105,9 +105,15 @@ class Scanner:
 			self.token = '=='
 			self.pointer += 1
 			return False
-		else:	# token '='
+		elif char in VALID_CHARS:	# token '='
 			self.token = '='
 			return False
+		else:
+			self.error_msg = 'Invalid input'
+			self.token += char
+			self.pointer += 1
+			return True # Panic error
+
 
 	def star_state(self):	# State 8
 		self.token_type = 'SYMBOL'
