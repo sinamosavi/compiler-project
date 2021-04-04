@@ -110,6 +110,7 @@ class Scanner:
 			return False
 		else:
 			self.error_msg = 'Invalid input'
+			self.token = '='
 			self.token += char
 			self.pointer += 1
 			return True # Panic error
