@@ -11,7 +11,7 @@ SYMBOL = {';', ':', ',', '[', ']', '(', ')', '{', '}', '+', '-', '*', '=', '<'}
 KEYWORDS = {'if', 'else', 'void', 'int', 'while', 'break', 'switch', 'default', 'case', 'return', 'for'}
 KEYWORDS_list = ['if', 'else', 'void', 'int', 'while', 'break', 'switch', 'default', 'case', 'return', 'for']
 
-VALID_CHARS = LETTER.union(DIGIT).union(WHITE_SPACE).union(SYMBOL)
+VALID_CHARS = LETTER.union(DIGIT).union(WHITE_SPACE).union(SYMBOL).union('/')
 EOF = '$'
 
 class Scanner:
@@ -143,9 +143,11 @@ class Scanner:
 			return self.comment_paragraph_state()
 		else:
 			self.error_msg = 'Invalid input'
+			# self.token = f'/{char}'
 			self.token = '/'
+
 			# This line created a bug with in Test 12
-			#self.pointer += 1
+			# self.pointer += 1
 			return True # Panic error
 
 	def comment_line_state(self):	# State b
