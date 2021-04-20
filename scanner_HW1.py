@@ -201,15 +201,6 @@ class Scanner:
 		return False
 
 	def get_next_token(self):
-		if(self.pointer >= len(self.line)):
-			# Go to the next line 
-			self.line_number += 1
-			if self.line_number >= len(self.lines):		# End of the code
-				self.token = '$'
-				return False
-			self.line = self.lines[self.line_number]
-			self.pointer = 0
-			self.token = ''
 			
 		char = self.line[self.pointer]
 		#print("At character: " + char)

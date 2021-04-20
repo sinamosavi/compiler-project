@@ -1,0 +1,91 @@
+Program DeclarationList $
+DeclarationList Declaration DeclarationList
+DeclarationList 
+Declaration DeclarationInitial DeclarationPrime
+DeclarationInitial TypeSpecifier ID
+DeclarationPrime FunDeclarationPrime
+DeclarationPrime VarDeclarationPrime
+VarDeclarationPrime ;
+VarDeclarationPrime [ NUM ] ;
+FunDeclarationPrime ( Params ) CompoundStmt
+TypeSpecifier int
+TypeSpecifier void
+Params int ID ParamPrime ParamList
+Params void ParamListVoidAbtar
+ParamListVoidAbtar ID ParamPrime ParamList
+ParamListVoidAbtar 
+ParamList , Param ParamList
+ParamList 
+Param DeclarationInitial ParamPrime
+ParamPrime [ ]
+ParamPrime 
+CompoundStmt { DeclarationList StatementList }
+StatementList Statement StatementList
+StatementList 
+Statement ExpressionStmt
+Statement CompoundStmt
+Statement SelectionStmt
+Statement IterationStmt
+Statement ReturnStmt
+Statement ForStmt
+ExpressionStmt Expression ;
+ExpressionStmt break ;
+ExpressionStmt ;
+SelectionStmt if ( Expression ) Statement else Statement
+IterationStmt while ( Expression ) Statement
+ReturnStmt return ReturnStmtPrime
+ReturnStmtPrime ;
+ReturnStmtPrime Expression ;
+ForStmt for ID = Vars Statement
+Vars Var VarZegond
+VarZegond , Var VarZegond
+VarZegond 
+Var ID VarPrime
+Expression SimpleExpressionZegond
+Expression ID B
+B = Expression
+B [ Expression ] H
+B SimpleExpressionPrime
+H = Expression
+H G D C
+SimpleExpressionZegond AdditiveExpressionZegond C
+SimpleExpressionPrime AdditiveExpressionPrime C
+C Relop AdditiveExpression
+C 
+Relop <
+Relop ==
+AdditiveExpression Term D
+AdditiveExpressionPrime TermPrime D
+AdditiveExpressionZegond TermZegond D
+D Addop Term D
+D 
+Addop +
+Addop -
+Term SignedFactor G
+TermPrime SignedFactorPrime G
+TermZegond SignedFactorZegond G
+G * SignedFactor G
+G 
+SignedFactor + Factor
+SignedFactor - Factor
+SignedFactor Factor
+SignedFactorPrime FactorPrime
+SignedFactorZegond + Factor
+SignedFactorZegond - Factor
+SignedFactorZegond FactorZegond
+Factor ( Expression )
+Factor ID VarCallPrime
+Factor NUM
+VarCallPrime ( Args )
+VarCallPrime VarPrime
+VarPrime [ Expression ]
+VarPrime 
+FactorPrime ( Args )
+FactorPrime 
+FactorZegond ( Expression )
+FactorZegond NUM
+Args ArgList
+Args 
+ArgList Expression ArgListPrime
+ArgListPrime , Expression ArgListPrime
+ArgListPrime 
