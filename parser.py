@@ -102,21 +102,133 @@ class Parser:
             self.fun_declaration_prime(self.add_node('Fun-declaration-prime', parent))
         elif l in first['Var-declaration-prime']:
             self.var_declaration_prime(self.add_node('Var-declaration-prime', parent))
-        elif l in follow['Declaration-prime']:
-            print(f'Missing Declaration-prime on line {self.line_number}')  # Declaration-prime -/-> eps
+        elif l in follow['Declaration-prime']: # Declaration-prime -/-> eps
+            print(f'Missing Declaration-prime on line {self.line_number}')  
         else:
             print(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.declaration_prime(parent)   
 
     def fun_declaration_prime(self, parent):
-        pass
+        l = self.lookahead
+        if l == '(':
+            self.match('(', parent)
+            self.params(self.add_node('Params', parent))
+            self.match(')', parent)
+            self.compound_stmt(self.add_node('Compound-stmt', parent))
+        elif l in follow['Fun-declaration-prime']: # Fun-declaration-prime -/-> eps
+            print(f'Missing Fun-declaration-prime on line {self.line_number}')  
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.fun_declaration_prime(parent)   
+
 
     def var_declaration_prime(self, parent):
-        pass        
+        l = self.lookahead
+        if l == ';':
+            self.match(';', parent)
+        elif l == '[':
+            self.match('[', parent)
+            self.match('NUM', parent)
+            self.match(']', parent) 
+            self.match(';', parent)
+        elif l in follow['Var-declaration-prime']: # Var-declaration-prime -/-> eps
+            print(f'Missing Var-declaration-prime on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.var_declaration_prime(parent) 
 
     def type_specifier(self, parent):
-        pass
+        l = self.lookahead
+        if l == 'int':
+            self.match('int', parent)
+        elif l == 'void':
+            self.match('void', parent)
+        elif l in follow['Type-specifier']: # Type-specifier -/-> eps
+            print(f'Missing Type-specifier on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.type_specifier(parent)  
+
+    def params(self, parent):
+        l = self.lookahead
+        if l == 'int':          
+            self.match('int', parent)
+            self.match('ID', parent)
+            self.param_prime(self.add_node('Param-prime', parent)) 
+            self.param_list(self.add_node('Param-list', parent)) 
+        elif l == 'void':
+            self.match('void', parent)
+            self.param_list_void_abtar(self.add_node('Param-list-void-abtar', parent)) 
+        elif l in follow['Params']: # Params -/-> eps
+            print(f'Missing Params on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.params(parent) 
+
+    def param_list_void_abtar(self, parent):
+        l = self.lookahead
+        if self.lookahead_type == 'ID': # ???
+            self.match('ID', parent)
+            self.param_prime(self.add_node('Param-prime', parent))
+            self.param_list(self.add_node('Param-list', parent)) 
+        elif l in follow['Param-list-void-abtar']: # Param-list-void-abtar -> eps
+            return 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.param_list_void_abtar(parent) 
+
+    def param_list(self, parent):
+        l = self.lookahead
+        if l == ',':
+            self.match(',', parent)
+            self.param(self.add_node('Param', parent))
+            self.param_list(self.add_node('Param-list', parent))
+        elif l in follow['Param-list']: # Param-list -> eps
+            return 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.param_list(parent) 
+
+    def param(self, parent):
+        l = self.lookahead
+        if l in first['Declaration-initial']:
+            self.declaration_initial(self.add_node('Declaration-initial', parent))
+            self.param_prime(self.add_node('Param-prime', parent))
+        elif l in follow['Param']:  # Param -/-> eps
+            print(f'Missing Param on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.param(parent) 
+
+    def param_prime(self, parent):
+        l = self.lookahead
+        if l == '[':
+            self.match('[', parent)
+            self.match(']', parent)
+        elif l in follow['Param-prime']: # Param-prime -> eps
+            return
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.param_prime(parent)
+
+    def compound_stmt(self, parent):
+        l = self.lookahead
+        if l == '{':
+            self.match('{', parent)
+            self.declaration_list(self.add_node('Declaration-list', parent))
+            self.statement_list(self.add_node('Statement-list', parent))
+            self.match('}', parent)
+        elif l in follow['Compound-stmt']:  # Compound-stmt -/-> eps
+            print(f'Missing Compound-stmt on line {self.line_number}') 
 
     def statement_list(self, parent):
         l = self.lookahead
@@ -202,8 +314,7 @@ class Parser:
     def expression_stmt(self, parent):
         pass
 
-    def compound_stmt(self, parent):
-        pass
+    
 
     def selection_stmt(self, parent):
         pass
@@ -222,3 +333,5 @@ class Parser:
 
     def simple_expression_prime(self, parent):
         pass
+
+    
