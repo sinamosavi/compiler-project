@@ -436,7 +436,7 @@ class Parser:
         if l == '=':
             self.match('=', parent)
             self.expression(self.add_node('Expression', parent))
-        elif l in first['G']:
+        elif l in first['G'] + first['D'] + first['C']:
             self.G(self.add_node('G', parent))
             self.D(self.add_node('D', parent))
             self.C(self.add_node('C', parent))
@@ -449,7 +449,82 @@ class Parser:
             self.get_next_token()
             self.H(parent)
 
-    
+    def simple_expression_zegond(self, parent):
+        l = self.get_lookahead()
+        if l in first['Additive-expression-zegond']:
+            self.additive_expression_zegond(self.add_node('Additive-expression-zegond', parent))
+            self.C(self.add_node('C', parent))
+        elif l in follow['Simple-expression-zegond']: # Simple-expression-zegond -/-> eps
+            print(f'Missing Simple-expression-zegond on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.simple_expression_zegond(parent)
+
+    def simple_expression_prime(self, parent):
+        l = self.get_lookahead()
+        if l in first['Additive-expression-prime'] + first['C']:
+            self.additive_expression_prime(self.add_node('Additive-expression-prime', parent))
+            self.C(self.add_node('C', parent))
+        elif l in follow['Simple-expression-prime']: # Additive-expression-prime C -> eps
+            self.additive_expression_prime(self.add_node('Additive-expression-prime', parent))
+            self.C(self.add_node('C', parent))
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.simple_expression_prime(parent)
+
+    def C(self, parent):
+        l = self.get_lookahead()
+        if l in first['Relop']:
+            self.relop(self.add_node('Relop', parent))
+            self.additive_expression(self.add_node('Additive-expression', parent))
+        elif l in follow['C']: # C -> eps
+            return
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.C(parent)
+
+    def relop(self, parent):
+        l = self.get_lookahead()
+        if l == '<':
+            self.match('<', parent)
+        elif l == '==':
+            self.match('==', parent)
+        elif l in follow['Relop']: # Relop -/-> eps
+            print(f'Missing Relop on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.relop(parent)
+
+    def additive_expression(self, parent):
+        l = self.get_lookahead()
+        if l in first['Term']:
+            self.term(self.add_node('Term', parent))
+            self.D(self.add_node('D', parent))
+        elif l in follow['Additive-expression']: # Additive-expression -/-> eps
+            print(f'Missing Additive-expression on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.additive_expression(parent)
+
+    def additive_expression_prime(self, parent):
+        l = self.get_lookahead()
+        if l in first['Term-prime'] + first['D']:
+            self.term_prime(self.add_node('Term-prime', parent))
+            self.D(self.add_node('D', parent))
+        elif l in follow['Additive-expression-prime']: # Term-prime D -> eps
+            self.term_prime(self.add_node('Term-prime', parent))
+            self.D(self.add_node('D', parent))
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.additive_expression_prime(parent)
+
+            
 
 
     def G(self, parent):
@@ -458,14 +533,10 @@ class Parser:
     def D(self, parent):
         pass
 
-    def C(self, parent):
-        pass
-
     
 
     
 
-    def simple_expression_prime(self, parent):
-        pass
+
 
     
