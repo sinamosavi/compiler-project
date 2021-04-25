@@ -524,19 +524,245 @@ class Parser:
             self.get_next_token()
             self.additive_expression_prime(parent)
 
-            
-
-
-    def G(self, parent):
-        pass
+    def additive_expression_zegond(self, parent):
+        l = self.get_lookahead()
+        if l in first['Term-zegond']:
+            self.term_zegond(self.add_node('Term-zegond', parent))
+            self.D(self.add_node('D', parent))
+        elif l in follow['Additive-expression-zegond']: # Additive-expression-zegond -/-> eps
+            print(f'Missing Additive-expression-zegond on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.additive_expression_zegond(parent)  
 
     def D(self, parent):
-        pass
+        l = self.get_lookahead()
+        if l in first['Addop']:
+            self.addop(self.add_node('Addop', parent))
+            self.term(self.add_node('Term', parent))
+            self.D(self.add_node('D', parent))
+        elif l in follow['D']: # D -> eps
+            return
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.D(parent)
 
+    def addop(self, parent):
+        l = self.get_lookahead()
+        if l == '+':
+            self.match('+', parent)
+        elif l == '-':
+            self.match('-', parent)
+        elif l in follow['Addop']: # Addop -/-> eps
+            print(f'Missing Addop on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.addop(parent)
+
+    def term(self, parent):
+        l = self.get_lookahead()
+        if l in first['Signed-factor']:
+            self.signed_factor(self.add_node('Signed-factor', parent))
+            self.G(self.add_node('G', parent))
+        elif l in follow['Term']: # Term -/-> eps
+            print(f'Missing Term on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.term(parent)
+
+    def term_prime(self, parent):
+        l = self.get_lookahead()
+        if l in first['Signed-factor-prime']:
+            self.signed_factor_prime(self.add_node('Signed-factor-prime', parent))
+            self.G(self.add_node('G', parent))
+        elif l in follow['Term-prime']: # Signed-factor-prime G -> eps
+            self.signed_factor_prime(self.add_node('Signed-factor-prime', parent))
+            self.G(self.add_node('G', parent))
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.term_prime(parent)
+
+    def term_zegond(self, parent):
+        l = self.get_lookahead()
+        if l in first['Signed-factor-zegond']:
+            self.signed_factor_zegond(self.add_node('Signed-factor-zegond', parent))
+            self.G(self.add_node('G', parent))
+        elif l in follow['Term-zegond']: # Term-zegond -/-> eps
+            print(f'Missing Term-zegond on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.term_zegond(parent)
     
+    def G(self, parent):
+        l = self.get_lookahead()
+        if l == '*':
+            self.match('*', parent)
+            self.signed_factor(self.add_node('Signed-factor', parent))
+            self.G(self.add_node('G', parent))
+        elif l in follow['G']: # G -> eps
+            return
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.G(parent)
 
-    
+    def signed_factor(self, parent):
+        l = self.get_lookahead()
+        if l == '+':
+            self.match('+', parent)
+            self.factor(self.add_node('Factor', parent))
+        elif l == '-':
+            self.match('-', parent)
+            self.factor(self.add_node('Factor', parent))
+        elif l in first['Factor']:
+            self.factor(self.add_node('Factor', parent))
+        elif l in follow['Signed-factor']: # Signed-factor -/-> eps
+            print(f'Missing Signed-factor on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.signed_factor(parent)
 
+    def signed_factor_prime(self, parent):
+        l = self.get_lookahead()
+        if l in first['Factor-prime']:
+            self.factor_prime(self.add_node('Factor-prime', parent))
+        elif l in follow['Signed-factor-prime']: # Factor-prime -> eps
+            self.factor_prime(self.add_node('Factor-prime', parent))
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.signed_factor_prime(parent)
 
+    def signed_factor_zegond(self, parent):
+        l = self.get_lookahead()
+        if l == '+':
+            self.match('+', parent)
+            self.factor(self.add_node('Factor', parent))
+        elif l == '-':
+            self.match('-', parent)
+            self.factor(self.add_node('Factor', parent))
+        elif l in first['Factor-zegond']:
+            self.factor_zegond(self.add_node('Factor-zegond', parent))
+        elif l in follow['Signed-factor-zegond']: # Signed-factor-zegond -/-> eps
+            print(f'Missing Signed-factor-zegond on line {self.line_number}') 
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.signed_factor_zegond(parent)  
 
-    
+    def factor(self, parent): 
+        l = self.get_lookahead()
+        if l == '(':
+            self.match('(', parent)
+            self.expression(self.add_node('Expression', parent))
+            self.match(')', parent)
+        elif l == 'ID':
+            self.match('ID', parent)
+            self.var_call_prime(self.add_node('Var-call-prime', parent))
+        elif l == 'NUM':
+            self.match('NUM', parent)
+        elif l in follow['Factor']: # Factor -/-> eps
+            print(f'Missing Factor on line {self.line_number}')   
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.factor(parent) 
+
+    def var_call_prime(self, parent):
+        l = self.get_lookahead()
+        if l == '(':
+            self.match('(', parent)
+            self.args(self.add_node('Args', parent))
+            self.match(')', parent)
+        elif l first['Var-prime']:
+            self.var_prime(self.add_node('Var-prime', parent))
+        elif l in follow['Var-call-prime']: # Var-prime -> eps
+            self.var_prime(self.add_node('Var-prime', parent))
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.var_call_prime(parent) 
+
+    def var_prime(self, parent):
+        l = self.get_lookahead()
+        if l == '[':
+            self.match('[', parent)
+            self.expression(self.add_node('Expression', parent))
+            self.match(']', parent)
+        elif l in follow['Var-prime']: # Var-prime -> eps
+            return
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.var_prime(parent) 
+
+    def factor_prime(self, parent):
+        l = self.get_lookahead()
+        if l == '(':
+            self.match('(', parent)
+            self.args(self.add_node('Args', parent))
+            self.match(')', parent)
+        elif l in follow['Factor-prime']: # Factor-prime -> eps
+            return
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.factor_prime(parent) 
+
+    def factor_zegond(self, parent):
+        l = self.get_lookahead()
+        if l == '(':
+            self.match('(', parent)
+            self.expression(self.add_node('Expression', parent))
+            self.match(')', parent)
+        elif l == 'NUM':
+            self.match('NUM', parent)        
+        elif l in follow['Factor-zegond']: # Factor-zegond -/-> eps
+            print(f'Missing Factor-zegond on line {self.line_number}')  
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.factor_zegond(parent) 
+
+    def args(self, parent):
+        l = self.get_lookahead()
+        if l in first['Arg-list']:
+            self.arg_list(self.add_node('Arg-list', parent))
+        elif l in follow['Args']: # Args -> eps
+            return
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.args(parent) 
+
+    def arg_list(self, parent):
+        l = self.get_lookahead()
+        if l in first['Expression']:
+            self.expression(self.add_node('Expression', parent))
+            self.arg_list_prime(self.add_node('Arg-list-prime'))
+        elif l in follow['Arg-list']: # Arg-list -/-> eps
+            print(f'Missing Arg-list on line {self.line_number}')  
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.arg_list(parent) 
+
+    def arg_list_prime(self, parent):
+        l = self.get_lookahead()
+        if l == ',':
+            self.match(',', parent)
+            self.expression(self.add_node('Expression', parent))
+            self.arg_list_prime(self.add_node('Arg-list-prime'))
+        elif l in follow['Arg-list-prime']: # Arg-list-prime -> eps
+            return
+        else:
+            print(f'Illegal {l} on line {self.line_number}')
+            self.get_next_token()
+            self.arg_list_prime(parent)
