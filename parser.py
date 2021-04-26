@@ -2,6 +2,7 @@ from anytree import Node, RenderTree
 from anytree.exporter import DotExporter
 from first_and_follows import first, follow
 from scanner import Scanner
+import re
 
 class Parser:
     def __init__(self, input_path):
@@ -12,7 +13,13 @@ class Parser:
         self.tree = Node('Program')
         self.tree_file = open("parse_tree.txt", "w", encoding='utf-8-sig')
         self.error_file = open("syntax_errors.txt", "w")
-
+	
+    def printerror(self, text):
+        print(text)
+        t1 = re.sub(r' on line \d+$', '', text)
+        t2 = t1[0].lower() + t1[1:]
+        self.error_file.write(f'#{self.line_number + 1} : syntax error, {t2}\n')
+	
     def add_node(self, token, parent, type=None):
         if type is not None:
             return Node(f'({type}, {token})', parent)
@@ -42,7 +49,7 @@ class Parser:
 
 
     def match(self, expected_token, parent):
-        print(f'Matching {self.lookahead} with {expected_token}')
+        #print(f'Matching {self.lookahead} with {expected_token}')
         matched = False
         if expected_token == 'NUM':
             if self.lookahead_type == 'NUM': matched = True
@@ -55,7 +62,7 @@ class Parser:
             self.add_node(self.lookahead, parent, self.lookahead_type)
             self.get_next_token()
         else:
-            print(f'Missing {expected_token} on line {self.line_number}')
+            self.printerror(f'Missing {expected_token} on line {self.line_number}')
 
     def program(self, parent):
         l = self.get_lookahead()
@@ -63,9 +70,11 @@ class Parser:
             self.declaration_list(self.add_node('Declaration-list', parent))
             self.match('$', parent)
         elif l in follow['Program']:
-            print(f'Missing Statement on line {self.line_number}')  # Program -/-> eps
+            self.printerror(f'Missing Statement on line {self.line_number}')  # Program -/-> eps
+            #self.error_file.write(f'#{self.line_number + 1} : syntax error, missing Statement')
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.program(parent)
 
@@ -77,7 +86,7 @@ class Parser:
         elif l in follow['Declaration-list']:
             return  # Declaration-list -> eps
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.declaration_list(parent)
 
@@ -87,9 +96,9 @@ class Parser:
             self.declaration_initial(self.add_node('Declaration-initial', parent))
             self.declaration_prime(self.add_node('Declaration-prime', parent))
         elif l in follow['Declaration']:
-            print(f'Missing Declaration on line {self.line_number}')  # Declaration -/-> eps
+            self.printerror(f'Missing Declaration on line {self.line_number}')  # Declaration -/-> eps
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.declaration(parent)
 
@@ -99,9 +108,9 @@ class Parser:
             self.type_specifier(self.add_node('Type-specifier', parent))
             self.match('ID', parent)
         elif l in follow['Declaration-initial']:
-            print(f'Missing Declaration-initial on line {self.line_number}')  # Declaration-initial -/-> eps
+            self.printerror(f'Missing Declaration-initial on line {self.line_number}')  # Declaration-initial -/-> eps
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.declaration_initial(parent)
     
@@ -112,9 +121,9 @@ class Parser:
         elif l in first['Var-declaration-prime']:
             self.var_declaration_prime(self.add_node('Var-declaration-prime', parent))
         elif l in follow['Declaration-prime']: # Declaration-prime -/-> eps
-            print(f'Missing Declaration-prime on line {self.line_number}')  
+            self.printerror(f'Missing Declaration-prime on line {self.line_number}')  
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.declaration_prime(parent)   
 
@@ -126,9 +135,9 @@ class Parser:
             self.match(')', parent)
             self.compound_stmt(self.add_node('Compound-stmt', parent))
         elif l in follow['Fun-declaration-prime']: # Fun-declaration-prime -/-> eps
-            print(f'Missing Fun-declaration-prime on line {self.line_number}')  
+            self.printerror(f'Missing Fun-declaration-prime on line {self.line_number}')  
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.fun_declaration_prime(parent)   
 
@@ -143,9 +152,9 @@ class Parser:
             self.match(']', parent) 
             self.match(';', parent)
         elif l in follow['Var-declaration-prime']: # Var-declaration-prime -/-> eps
-            print(f'Missing Var-declaration-prime on line {self.line_number}') 
+            self.printerror(f'Missing Var-declaration-prime on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.var_declaration_prime(parent) 
 
@@ -156,9 +165,9 @@ class Parser:
         elif l == 'void':
             self.match('void', parent)
         elif l in follow['Type-specifier']: # Type-specifier -/-> eps
-            print(f'Missing Type-specifier on line {self.line_number}') 
+            self.printerror(f'Missing Type-specifier on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.type_specifier(parent)  
 
@@ -173,9 +182,9 @@ class Parser:
             self.match('void', parent)
             self.param_list_void_abtar(self.add_node('Param-list-void-abtar', parent)) 
         elif l in follow['Params']: # Params -/-> eps
-            print(f'Missing Params on line {self.line_number}') 
+            self.printerror(f'Missing Params on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.params(parent) 
 
@@ -188,7 +197,7 @@ class Parser:
         elif l in follow['Param-list-void-abtar']: # Param-list-void-abtar -> eps
             return 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.param_list_void_abtar(parent) 
 
@@ -201,7 +210,7 @@ class Parser:
         elif l in follow['Param-list']: # Param-list -> eps
             return 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.param_list(parent) 
 
@@ -211,9 +220,9 @@ class Parser:
             self.declaration_initial(self.add_node('Declaration-initial', parent))
             self.param_prime(self.add_node('Param-prime', parent))
         elif l in follow['Param']:  # Param -/-> eps
-            print(f'Missing Param on line {self.line_number}') 
+            self.printerror(f'Missing Param on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.param(parent) 
 
@@ -225,7 +234,7 @@ class Parser:
         elif l in follow['Param-prime']: # Param-prime -> eps
             return
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.param_prime(parent)
 
@@ -237,7 +246,7 @@ class Parser:
             self.statement_list(self.add_node('Statement-list', parent))
             self.match('}', parent)
         elif l in follow['Compound-stmt']:  # Compound-stmt -/-> eps
-            print(f'Missing Compound-stmt on line {self.line_number}') 
+            self.printerror(f'Missing Compound-stmt on line {self.line_number}') 
 
     def statement_list(self, parent):
         l = self.get_lookahead()
@@ -247,7 +256,7 @@ class Parser:
         elif l in follow['Statement-list']:
             return  # Statement-list -> eps
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.statement_list(parent)
         
@@ -267,9 +276,9 @@ class Parser:
         elif l in first['For-stmt']:
             self.for_stmt(self.add_node('For-stmt', parent))
         elif l in follow['Statement']:
-            print(f'Missing Statement on line {self.line_number}')  # Statement -/-> eps
+            self.printerror(f'Missing Statement on line {self.line_number}')  # Statement -/-> eps
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.statement(parent)
 
@@ -284,9 +293,9 @@ class Parser:
         elif l == ';':
             self.match(';', parent)
         elif l in follow['Expression-stmt']:  # Expression-stmt -/-> eps
-            print(f'Missing Expression-stmt on line {self.line_number}') 
+            self.printerror(f'Missing Expression-stmt on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.expression_stmt(parent)
     
@@ -302,9 +311,9 @@ class Parser:
             self.match('else', parent)
             self.statement(self.add_node('Statement', parent))
         elif l in follow['Selection-stmt']: # Selection-stmt -/-> eps
-            print(f'Missing Selection-stmt on line {self.line_number}') 
+            self.printerror(f'Missing Selection-stmt on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.selection_stmt(parent)
 
@@ -318,9 +327,9 @@ class Parser:
             self.match(')', parent)
             self.statement(self.add_node('Statement', parent))
         elif l in follow['Iteration-stmt']: # Iteration-stmt -/-> eps
-            print(f'Missing Iteration-stmt on line {self.line_number}') 
+            self.printerror(f'Missing Iteration-stmt on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.iteration_stmt(parent)
 
@@ -330,9 +339,9 @@ class Parser:
             self.match('return', parent)
             self.return_stmt_prime(self.add_node('Return-stmt-prime', parent))
         elif l in follow['Return-stmt']: # Return-stmt -/-> eps
-            print(f'Missing Return-stmt on line {self.line_number}')
+            self.printerror(f'Missing Return-stmt on line {self.line_number}')
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.return_stmt(parent) 
 
@@ -344,9 +353,9 @@ class Parser:
             self.expression(self.add_node('Expression', parent))
             self.match(';', parent)
         elif l in follow['Return-stmt-prime']: # Return-stmt-prime -/-> eps
-            print(f'Missing Return-stmt-prime on line {self.line_number}')
+            self.printerror(f'Missing Return-stmt-prime on line {self.line_number}')
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.return_stmt_prime(parent)  
 
@@ -359,9 +368,9 @@ class Parser:
             self.vars(self.add_node('Vars', parent))
             self.statement(self.add_node('Statement', parent))
         elif l in follow['For-stmt']: # For-stmt -/-> eps
-            print(f'Missing For-stmt on line {self.line_number}')
+            self.printerror(f'Missing For-stmt on line {self.line_number}')
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.for_stmt(parent) 
 
@@ -371,9 +380,9 @@ class Parser:
             self.var(self.add_node('Var', parent))
             self.var_zegond(self.add_node('Var-zegond', parent))
         elif l in follow['Vars']: # Vars -/-> eps
-            print(f'Missing Vars on line {self.line_number}')
+            self.printerror(f'Missing Vars on line {self.line_number}')
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.vars(parent) 
 
@@ -386,7 +395,7 @@ class Parser:
         elif l in follow['Var-zegond']: # Var-zegond -> eps
             return
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.var_zegond(parent) 
 
@@ -396,9 +405,9 @@ class Parser:
             self.match('ID', parent)
             self.var_prime(self.add_node('Var-prime', parent))
         elif l in follow['Var']: # Var -/-> eps
-            print(f'Missing Var on line {self.line_number}')
+            self.printerror(f'Missing Var on line {self.line_number}')
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.var(parent) 
 
@@ -410,9 +419,9 @@ class Parser:
             self.match('ID', parent)
             self.B(self.add_node('B', parent))
         elif l in follow['Expression']: # Expression -/-> eps
-            print(f'Missing Expression on line {self.line_number}')
+            self.printerror(f'Missing Expression on line {self.line_number}')
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.expression(parent) 
 
@@ -431,7 +440,7 @@ class Parser:
         elif l in follow['B']: # Simple-expression-prime -> eps
             self.simple_expression_prime(self.add_node('Simple-expression-prime', parent))  
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.B(parent)
 
@@ -449,7 +458,7 @@ class Parser:
             self.D(self.add_node('D', parent))
             self.C(self.add_node('C', parent)) 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.H(parent)
 
@@ -459,9 +468,9 @@ class Parser:
             self.additive_expression_zegond(self.add_node('Additive-expression-zegond', parent))
             self.C(self.add_node('C', parent))
         elif l in follow['Simple-expression-zegond']: # Simple-expression-zegond -/-> eps
-            print(f'Missing Simple-expression-zegond on line {self.line_number}') 
+            self.printerror(f'Missing Simple-expression-zegond on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.simple_expression_zegond(parent)
 
@@ -474,7 +483,7 @@ class Parser:
             self.additive_expression_prime(self.add_node('Additive-expression-prime', parent))
             self.C(self.add_node('C', parent))
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.simple_expression_prime(parent)
 
@@ -486,7 +495,7 @@ class Parser:
         elif l in follow['C']: # C -> eps
             return
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.C(parent)
 
@@ -497,9 +506,9 @@ class Parser:
         elif l == '==':
             self.match('==', parent)
         elif l in follow['Relop']: # Relop -/-> eps
-            print(f'Missing Relop on line {self.line_number}') 
+            self.printerror(f'Missing Relop on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.relop(parent)
 
@@ -509,9 +518,9 @@ class Parser:
             self.term(self.add_node('Term', parent))
             self.D(self.add_node('D', parent))
         elif l in follow['Additive-expression']: # Additive-expression -/-> eps
-            print(f'Missing Additive-expression on line {self.line_number}') 
+            self.printerror(f'Missing Additive-expression on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.additive_expression(parent)
 
@@ -524,7 +533,7 @@ class Parser:
             self.term_prime(self.add_node('Term-prime', parent))
             self.D(self.add_node('D', parent))
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.additive_expression_prime(parent)
 
@@ -534,9 +543,9 @@ class Parser:
             self.term_zegond(self.add_node('Term-zegond', parent))
             self.D(self.add_node('D', parent))
         elif l in follow['Additive-expression-zegond']: # Additive-expression-zegond -/-> eps
-            print(f'Missing Additive-expression-zegond on line {self.line_number}') 
+            self.printerror(f'Missing Additive-expression-zegond on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.additive_expression_zegond(parent)  
 
@@ -549,7 +558,7 @@ class Parser:
         elif l in follow['D']: # D -> eps
             return
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.D(parent)
 
@@ -560,9 +569,9 @@ class Parser:
         elif l == '-':
             self.match('-', parent)
         elif l in follow['Addop']: # Addop -/-> eps
-            print(f'Missing Addop on line {self.line_number}') 
+            self.printerror(f'Missing Addop on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.addop(parent)
 
@@ -572,9 +581,9 @@ class Parser:
             self.signed_factor(self.add_node('Signed-factor', parent))
             self.G(self.add_node('G', parent))
         elif l in follow['Term']: # Term -/-> eps
-            print(f'Missing Term on line {self.line_number}') 
+            self.printerror(f'Missing Term on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.term(parent)
 
@@ -587,7 +596,7 @@ class Parser:
             self.signed_factor_prime(self.add_node('Signed-factor-prime', parent))
             self.G(self.add_node('G', parent))
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.term_prime(parent)
 
@@ -597,9 +606,9 @@ class Parser:
             self.signed_factor_zegond(self.add_node('Signed-factor-zegond', parent))
             self.G(self.add_node('G', parent))
         elif l in follow['Term-zegond']: # Term-zegond -/-> eps
-            print(f'Missing Term-zegond on line {self.line_number}') 
+            self.printerror(f'Missing Term-zegond on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.term_zegond(parent)
     
@@ -612,7 +621,7 @@ class Parser:
         elif l in follow['G']: # G -> eps
             return
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.G(parent)
 
@@ -627,9 +636,9 @@ class Parser:
         elif l in first['Factor']:
             self.factor(self.add_node('Factor', parent))
         elif l in follow['Signed-factor']: # Signed-factor -/-> eps
-            print(f'Missing Signed-factor on line {self.line_number}') 
+            self.printerror(f'Missing Signed-factor on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.signed_factor(parent)
 
@@ -640,7 +649,7 @@ class Parser:
         elif l in follow['Signed-factor-prime']: # Factor-prime -> eps
             self.factor_prime(self.add_node('Factor-prime', parent))
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.signed_factor_prime(parent)
 
@@ -655,9 +664,9 @@ class Parser:
         elif l in first['Factor-zegond']:
             self.factor_zegond(self.add_node('Factor-zegond', parent))
         elif l in follow['Signed-factor-zegond']: # Signed-factor-zegond -/-> eps
-            print(f'Missing Signed-factor-zegond on line {self.line_number}') 
+            self.printerror(f'Missing Signed-factor-zegond on line {self.line_number}') 
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.signed_factor_zegond(parent)  
 
@@ -673,9 +682,9 @@ class Parser:
         elif l == 'NUM':
             self.match('NUM', parent)
         elif l in follow['Factor']: # Factor -/-> eps
-            print(f'Missing Factor on line {self.line_number}')   
+            self.printerror(f'Missing Factor on line {self.line_number}')   
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.factor(parent) 
 
@@ -690,7 +699,7 @@ class Parser:
         elif l in follow['Var-call-prime']: # Var-prime -> eps
             self.var_prime(self.add_node('Var-prime', parent))
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.var_call_prime(parent) 
 
@@ -703,7 +712,7 @@ class Parser:
         elif l in follow['Var-prime']: # Var-prime -> eps
             return
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.var_prime(parent) 
 
@@ -716,7 +725,7 @@ class Parser:
         elif l in follow['Factor-prime']: # Factor-prime -> eps
             return
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.factor_prime(parent) 
 
@@ -729,9 +738,9 @@ class Parser:
         elif l == 'NUM':
             self.match('NUM', parent)        
         elif l in follow['Factor-zegond']: # Factor-zegond -/-> eps
-            print(f'Missing Factor-zegond on line {self.line_number}')  
+            self.printerror(f'Missing Factor-zegond on line {self.line_number}')  
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.factor_zegond(parent) 
 
@@ -742,7 +751,7 @@ class Parser:
         elif l in follow['Args']: # Args -> eps
             return
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.args(parent) 
 
@@ -752,9 +761,9 @@ class Parser:
             self.expression(self.add_node('Expression', parent))
             self.arg_list_prime(self.add_node('Arg-list-prime', parent))
         elif l in follow['Arg-list']: # Arg-list -/-> eps
-            print(f'Missing Arg-list on line {self.line_number}')  
+            self.printerror(f'Missing Arg-list on line {self.line_number}')  
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.arg_list(parent) 
 
@@ -763,11 +772,11 @@ class Parser:
         if l == ',':
             self.match(',', parent)
             self.expression(self.add_node('Expression', parent))
-            self.arg_list_prime(self.add_node('Arg-list-prime'))
+            self.arg_list_prime(self.add_node('Arg-list-prime', parent))
         elif l in follow['Arg-list-prime']: # Arg-list-prime -> eps
             return
         else:
-            print(f'Illegal {l} on line {self.line_number}')
+            self.printerror(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.arg_list_prime(parent)
 
