@@ -14,3 +14,6 @@ if __name__ == '__main__':
 
 	parser = Parser(input_path=input)
 	parser.parse()
+	parser.print_parse_tree()
+	if not parser.error:
+		parser.error_file.write('There is no syntax error.') 
