@@ -1,4 +1,5 @@
 from anytree import Node, RenderTree
+from anytree.exporter import DotExporter
 from first_and_follows import first, follow
 from scanner import Scanner
 
@@ -9,7 +10,7 @@ class Parser:
         self.lookahead_type = ''
         self.line_number = 0
         self.tree = Node('Program')
-        self.tree_file = open("parse_tree.txt", "w")
+        self.tree_file = open("parse_tree.txt", "w", encoding='utf-8-sig')
         self.error_file = open("syntax_errors.txt", "w")
 
     def add_node(self, token, parent, type=None):
@@ -30,6 +31,8 @@ class Parser:
 
     def parse(self):
         self.get_next_token()
+        #rint(f'First Token {self.lookahead}')
+        self.program(self.tree)
         if self.lookahead == '$': return
 
     def get_lookahead(self):
@@ -39,6 +42,7 @@ class Parser:
 
 
     def match(self, expected_token, parent):
+        print(f'Matching {self.lookahead} with {expected_token}')
         matched = False
         if expected_token == 'NUM':
             if self.lookahead_type == 'NUM': matched = True
@@ -681,7 +685,7 @@ class Parser:
             self.match('(', parent)
             self.args(self.add_node('Args', parent))
             self.match(')', parent)
-        elif l first['Var-prime']:
+        elif l in first['Var-prime']:
             self.var_prime(self.add_node('Var-prime', parent))
         elif l in follow['Var-call-prime']: # Var-prime -> eps
             self.var_prime(self.add_node('Var-prime', parent))
@@ -746,7 +750,7 @@ class Parser:
         l = self.get_lookahead()
         if l in first['Expression']:
             self.expression(self.add_node('Expression', parent))
-            self.arg_list_prime(self.add_node('Arg-list-prime'))
+            self.arg_list_prime(self.add_node('Arg-list-prime', parent))
         elif l in follow['Arg-list']: # Arg-list -/-> eps
             print(f'Missing Arg-list on line {self.line_number}')  
         else:
@@ -766,3 +770,17 @@ class Parser:
             print(f'Illegal {l} on line {self.line_number}')
             self.get_next_token()
             self.arg_list_prime(parent)
+
+if __name__ == '__main__':
+	#Sample input from command line: "python compiler.py"
+	input = "input.txt"
+
+	# scanner = Scanner(input_path = input)
+	# scanner.scan(input)
+
+	parser = Parser(input_path=input)
+	parser.parse()
+	for row in RenderTree(parser.tree):
+	    print("%s%s" % (row.pre, row.node.name))
+	    parser.tree_file.write("%s%s\n" % (row.pre, row.node.name))
+	#DotExporter(parser.tree).to_picture("tree.png")

@@ -205,11 +205,13 @@ class Scanner:
 			# Go to the next line 
 			self.line_number += 1
 			if self.line_number >= len(self.lines):		# End of the code
+				#print("This is the end!")
 				self.token = '$'
+				self.token_type = "EOF"
 				return False
 			self.line = self.lines[self.line_number]
 			self.pointer = 0
-			self.token = ''
+			if(not self.token == "$"): self.token = ''
 			
 		char = self.line[self.pointer]
 		#print("At character: " + char)
