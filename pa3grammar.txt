@@ -6,7 +6,7 @@ Declaration-initial ->  Type-specifier #pid ID
 Declaration-prime -> Fun-declaration-prime
 Declaration-prime -> Var-declaration-prime
 Var-declaration-prime -> ; #pop
-Var-declaration-prime -> [ #pnum NUM ] #save_arr ; 
+Var-declaration-prime -> [ #pnum NUM ] #declare_array ; 
 Fun-declaration-prime ->  ( Params ) Compound-stmt
 Type-specifier -> int
 Type-specifier -> void
@@ -52,26 +52,26 @@ Simple-expression-zegond -> Additive-expression-zegond C
 Simple-expression-prime -> Additive-expression-prime C
 C -> Relop Additive-expression #relop
 C -> ε
-Relop -> #relop_sign <
-Relop -> #relop_sign ==
+Relop -> #symbol <
+Relop -> #symbol ==
 Additive-expression -> Term D
 Additive-expression-prime -> Term-prime D
 Additive-expression-zegond -> Term-zegond D
-D -> Addop Term #add D
+D -> Addop Term #addop D
 D -> ε
-Addop -> #sign +
-Addop -> #sign -
+Addop -> #symbol +
+Addop -> #symbol -
 Term -> Signed-factor G
 Term-prime -> Signed-factor-prime G
 Term-zegond -> Signed-factor-zegond G
 G -> * Signed-factor #mult G
 G -> ε
-Signed-factor -> #sign + Factor #signed_num
-Signed-factor -> #sign - Factor #signed_num
+Signed-factor -> #symbol + Factor #signed_factor
+Signed-factor -> #symbol - Factor #signed_factor
 Signed-factor -> Factor
 Signed-factor-prime -> Factor-prime
-Signed-factor-zegond -> #sign + Factor #signed_num
-Signed-factor-zegond -> #sign - Factor #signed_num
+Signed-factor-zegond -> #symbol + Factor #signed_factor
+Signed-factor-zegond -> #symbol - Factor #signed_factor
 Signed-factor-zegond -> Factor-zegond
 Factor -> ( Expression )
 Factor -> #pid ID Var-call-prime

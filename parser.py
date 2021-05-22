@@ -179,7 +179,7 @@ class Parser:
             self.codegen.code_gen("#pnum", self.lookahead)
             self.match('NUM', parent)
             self.match(']', parent)
-            self.codegen.code_gen("#save_arr")    
+            self.codegen.code_gen("#declare_array")    
             self.match(';', parent)
         elif l in follow['Var-declaration-prime']: # Var-declaration-prime -/-> eps
             parent.parent = None
@@ -619,10 +619,10 @@ class Parser:
     def relop(self, parent):
         l = self.get_lookahead()
         if l == '<':
-            self.codegen.code_gen("#relop_sign", self.lookahead)
+            self.codegen.code_gen("#symbol", self.lookahead)
             self.match('<', parent)
         elif l == '==':
-            self.codegen.code_gen("#relop_sign", self.lookahead)
+            self.codegen.code_gen("#symbol", self.lookahead)
             self.match('==', parent)
         elif l in follow['Relop']: # Relop -/-> eps
             parent.parent = None
@@ -684,7 +684,7 @@ class Parser:
         if l in first['Addop']:
             self.addop(self.add_node('Addop', parent))
             self.term(self.add_node('Term', parent))
-            self.codegen.code_gen("#add")
+            self.codegen.code_gen("#addop")
             self.D(self.add_node('D', parent))
         elif l in follow['D']: # D -> eps
             self.add_node('epsilon', parent)
@@ -699,10 +699,10 @@ class Parser:
     def addop(self, parent):
         l = self.get_lookahead()
         if l == '+':
-            self.codegen.code_gen("#sign", self.lookahead)
+            self.codegen.code_gen("#symbol", self.lookahead)
             self.match('+', parent)
         elif l == '-':
-            self.codegen.code_gen("#sign", self.lookahead)
+            self.codegen.code_gen("#symbol", self.lookahead)
             self.match('-', parent)
         elif l in follow['Addop']: # Addop -/-> eps
             parent.parent = None
@@ -779,15 +779,15 @@ class Parser:
     def signed_factor(self, parent):
         l = self.get_lookahead()
         if l == '+':
-            self.codegen.code_gen("#sign", self.lookahead)
+            self.codegen.code_gen("#symbol", self.lookahead)
             self.match('+', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_num")
+            self.codegen.code_gen("#signed_factor")
         elif l == '-':
-            self.codegen.code_gen("#sign", self.lookahead)
+            self.codegen.code_gen("#symbol", self.lookahead)
             self.match('-', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_num")
+            self.codegen.code_gen("#signed_factor")
         elif l in first['Factor']:
             self.factor(self.add_node('Factor', parent))
         elif l in follow['Signed-factor']: # Signed-factor -/-> eps
@@ -816,15 +816,15 @@ class Parser:
     def signed_factor_zegond(self, parent):
         l = self.get_lookahead()
         if l == '+':
-            self.codegen.code_gen("#sign", self.lookahead)
+            self.codegen.code_gen("#symbol", self.lookahead)
             self.match('+', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_num")
+            self.codegen.code_gen("#signed_factor")
         elif l == '-':
-            self.codegen.code_gen("#sign", self.lookahead)
+            self.codegen.code_gen("#symbol", self.lookahead)
             self.match('-', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_num")
+            self.codegen.code_gen("#signed_factor")
         elif l in first['Factor-zegond']:
             self.factor_zegond(self.add_node('Factor-zegond', parent))
         elif l in follow['Signed-factor-zegond']: # Signed-factor-zegond -/-> eps
