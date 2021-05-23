@@ -50,21 +50,21 @@ H -> = Expression #assign
 H -> G D C
 Simple-expression-zegond -> Additive-expression-zegond C
 Simple-expression-prime -> Additive-expression-prime C
-C -> Relop Additive-expression #relop
+C -> Relop Additive-expression #arithmetic_op
 C -> ε
 Relop -> #symbol <
 Relop -> #symbol ==
 Additive-expression -> Term D
 Additive-expression-prime -> Term-prime D
 Additive-expression-zegond -> Term-zegond D
-D -> Addop Term #addop D
+D -> Addop Term #arithmetic_op D
 D -> ε
 Addop -> #symbol +
 Addop -> #symbol -
 Term -> Signed-factor G
 Term-prime -> Signed-factor-prime G
 Term-zegond -> Signed-factor-zegond G
-G -> * Signed-factor #mult G
+G -> #symbol * Signed-factor #arithmetic_op G
 G -> ε
 Signed-factor -> #symbol + Factor #signed_factor
 Signed-factor -> #symbol - Factor #signed_factor

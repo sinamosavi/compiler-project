@@ -12,9 +12,7 @@ class Codegen:
             'pnum': self.pnum,
             'array_address': self.array_address,
             'assign': self.assign,
-            'relop': self.relop,
-            'addop': self.addop,
-            'mult': self.mult,
+            'arithmetic_op': self.arithmetic_op,
             'symbol': self.symbol,
             'signed_factor': self.signed_factor,
             'save': self.save,
@@ -117,34 +115,51 @@ class Codegen:
         self.pb_write(f'(ADD, #{arr_addr}, {t}, {t})')
         self.semantic_stack.append('@' + str(t))  
 
-    def relop(self, arg=None):
-        op_2 = self.semantic_stack.pop()
+    def arithmetic_op(self, arg=None):
+        op2 = self.semantic_stack.pop()
         operand = self.semantic_stack.pop()
-        op_1 = self.semantic_stack.pop()
+        op1 = self.semantic_stack.pop()
         t = self.get_temp()
         if operand == '==':
-            self.pb_write(f'(EQ, {op_1}, {op_2}, {t})')
+            self.pb_write(f'(EQ, {op1}, {op2}, {t})')
         elif operand == '<':
-            self.pb_write(f'(LT, {op_1}, {op_2}, {t})')
-        self.semantic_stack.append(t)  
-
-    def addop(self, arg=None):
-        op1 = self.semantic_stack.pop()
-        operation = self.semantic_stack.pop()
-        op2 = self.semantic_stack.pop()
-        t = self.get_temp()
-        if operation == '+':
-            self.pb_write(f'(ADD, {op1}, {op2}, {t})')
-        else:
-            self.pb_write(f'(SUB, {op2}, {op1}, {t})')
+            self.pb_write(f'(LT, {op1}, {op2}, {t})')
+        elif operand == '+':
+            self.pb_write(f'(ADD, {op2}, {op1}, {t})')
+        elif operand == '-':
+            self.pb_write(f'(SUB, {op1}, {op2}, {t})')
+        elif operand == '*':
+            self.pb_write(f'(MULT, {op2}, {op1}, {t})')
         self.semantic_stack.append(t)
 
-    def mult(self, arg=None):
-        op1 = self.semantic_stack.pop()
-        op2 = self.semantic_stack.pop()
-        t = self.get_temp()
-        self.pb_write(f'(MULT, {op1}, {op2}, {t})')
-        self.semantic_stack.append(t)
+    # def relop(self, arg=None):
+    #     op_2 = self.semantic_stack.pop()
+    #     operand = self.semantic_stack.pop()
+    #     op_1 = self.semantic_stack.pop()
+    #     t = self.get_temp()
+    #     if operand == '==':
+    #         self.pb_write(f'(EQ, {op_1}, {op_2}, {t})')
+    #     elif operand == '<':
+    #         self.pb_write(f'(LT, {op_1}, {op_2}, {t})')
+    #     self.semantic_stack.append(t)  
+
+    # def addop(self, arg=None):
+    #     op1 = self.semantic_stack.pop()
+    #     operation = self.semantic_stack.pop()
+    #     op2 = self.semantic_stack.pop()
+    #     t = self.get_temp()
+    #     if operation == '+':
+    #         self.pb_write(f'(ADD, {op1}, {op2}, {t})')
+    #     else:
+    #         self.pb_write(f'(SUB, {op2}, {op1}, {t})')
+    #     self.semantic_stack.append(t)
+
+    # def mult(self, arg=None):
+    #     op1 = self.semantic_stack.pop()
+    #     op2 = self.semantic_stack.pop()
+    #     t = self.get_temp()
+    #     self.pb_write(f'(MULT, {op1}, {op2}, {t})')
+    #     self.semantic_stack.append(t)
 
     def symbol(self, arg):
         self.semantic_stack.append(arg)

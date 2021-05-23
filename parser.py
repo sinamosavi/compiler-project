@@ -605,7 +605,7 @@ class Parser:
         if l in first['Relop']:
             self.relop(self.add_node('Relop', parent))
             self.additive_expression(self.add_node('Additive-expression', parent))
-            self.codegen.code_gen("#relop")
+            self.codegen.code_gen("#arithmetic_op")
         elif l in follow['C']: # C -> eps
             self.add_node('epsilon', parent)
             return
@@ -684,7 +684,7 @@ class Parser:
         if l in first['Addop']:
             self.addop(self.add_node('Addop', parent))
             self.term(self.add_node('Term', parent))
-            self.codegen.code_gen("#addop")
+            self.codegen.code_gen("#arithmetic_op")
             self.D(self.add_node('D', parent))
         elif l in follow['D']: # D -> eps
             self.add_node('epsilon', parent)
@@ -762,9 +762,10 @@ class Parser:
     def G(self, parent):
         l = self.get_lookahead()
         if l == '*':
+            self.codegen.code_gen("#symbol", self.lookahead)
             self.match('*', parent)
             self.signed_factor(self.add_node('Signed-factor', parent))
-            self.codegen.code_gen("#mult")
+            self.codegen.code_gen("#arithmetic_op")
             self.G(self.add_node('G', parent))
         elif l in follow['G']: # G -> eps
             self.add_node('epsilon', parent)
