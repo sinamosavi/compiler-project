@@ -31,7 +31,7 @@ Statement -> For-stmt
 Expression-stmt -> Expression ; #pop
 Expression-stmt -> break ;
 Expression-stmt -> ;
-Selection-stmt -> if ( Expression ) #save Statement else #jpf Statement #jp
+Selection-stmt -> if ( Expression ) #save Statement else #cond_jump Statement #jump
 Iteration-stmt -> while ( #label Expression ) #save Statement #while
 Return-stmt -> return Return-stmt-prime
 Return-stmt-prime -> ;
@@ -44,7 +44,7 @@ Var -> #pid ID Var-prime
 Expression -> Simple-expression-zegond
 Expression -> #pid ID B
 B -> = Expression #assign
-B -> [ Expression ] #array_address H
+B -> [ Expression ] #arr_element H
 B -> Simple-expression-prime
 H -> = Expression #assign
 H -> G D C
@@ -66,12 +66,12 @@ Term-prime -> Signed-factor-prime G
 Term-zegond -> Signed-factor-zegond G
 G -> #symbol * Signed-factor #arithmetic_op G
 G -> ε
-Signed-factor -> #symbol + Factor #signed_factor
-Signed-factor -> #symbol - Factor #signed_factor
+Signed-factor -> #symbol + Factor #signed_num
+Signed-factor -> #symbol - Factor #signed_num
 Signed-factor -> Factor
 Signed-factor-prime -> Factor-prime
-Signed-factor-zegond -> #symbol + Factor #signed_factor
-Signed-factor-zegond -> #symbol - Factor #signed_factor
+Signed-factor-zegond -> #symbol + Factor #signed_num
+Signed-factor-zegond -> #symbol - Factor #signed_num
 Signed-factor-zegond -> Factor-zegond
 Factor -> ( Expression )
 Factor -> #pid ID Var-call-prime
@@ -80,7 +80,7 @@ Var-call-prime -> ( Args )
 Var-call-prime -> Var-prime
 Var-prime -> [ Expression ] #array_address
 Var-prime -> ε
-Factor-prime -> ( Args ) #output
+Factor-prime -> ( Args ) #print
 Factor-prime -> ε
 Factor-zegond -> ( Expression )
 Factor-zegond -> #pnum NUM

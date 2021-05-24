@@ -56,7 +56,7 @@ class Parser:
         #print(f'First Token {self.lookahead}')
         self.program(self.tree)
         if self.lookahead == '$':
-            self.codegen.save_program_block()
+            self.codegen.save_pb()
             return
 
     def get_lookahead(self):
@@ -376,9 +376,9 @@ class Parser:
             self.codegen.code_gen("#save")
             self.statement(self.add_node('Statement', parent))
             self.match('else', parent)
-            self.codegen.code_gen("#jpf")
+            self.codegen.code_gen("#cond_jump")
             self.statement(self.add_node('Statement', parent))
-            self.codegen.code_gen("#jp")
+            self.codegen.code_gen("#jump")
         elif l in follow['Selection-stmt']: # Selection-stmt -/-> eps
             parent.parent = None
             self.print_error(f'Missing Selection-stmt') 
@@ -536,7 +536,7 @@ class Parser:
             self.match('[', parent)
             self.expression(self.add_node('Expression', parent))
             self.match(']', parent)
-            self.codegen.code_gen("#array_address", self.lookahead)
+            self.codegen.code_gen("#arr_element", self.lookahead)
             self.H(self.add_node('H', parent))
         elif l in first['Simple-expression-prime']:
             self.simple_expression_prime(self.add_node('Simple-expression-prime', parent))
@@ -717,7 +717,7 @@ class Parser:
     def term(self, parent):
         l = self.get_lookahead()
         if l in first['Signed-factor']:
-            self.signed_factor(self.add_node('Signed-factor', parent))
+            self.signed_num(self.add_node('Signed-factor', parent))
             self.G(self.add_node('G', parent))
         elif l in follow['Term']: # Term -/-> eps
             parent.parent = None
@@ -732,10 +732,10 @@ class Parser:
     def term_prime(self, parent):
         l = self.get_lookahead()
         if l in first['Signed-factor-prime'] + first['G']:
-            self.signed_factor_prime(self.add_node('Signed-factor-prime', parent))
+            self.signed_num_prime(self.add_node('Signed-factor-prime', parent))
             self.G(self.add_node('G', parent))
         elif l in follow['Term-prime']: # Signed-factor-prime G -> eps
-            self.signed_factor_prime(self.add_node('Signed-factor-prime', parent))
+            self.signed_num_prime(self.add_node('Signed-factor-prime', parent))
             self.G(self.add_node('G', parent))
         elif l == '$':
             self.terminate(parent)
@@ -747,7 +747,7 @@ class Parser:
     def term_zegond(self, parent):
         l = self.get_lookahead()
         if l in first['Signed-factor-zegond']:
-            self.signed_factor_zegond(self.add_node('Signed-factor-zegond', parent))
+            self.signed_num_zegond(self.add_node('Signed-factor-zegond', parent))
             self.G(self.add_node('G', parent))
         elif l in follow['Term-zegond']: # Term-zegond -/-> eps
             parent.parent = None
@@ -764,7 +764,7 @@ class Parser:
         if l == '*':
             self.codegen.code_gen("#symbol", self.lookahead)
             self.match('*', parent)
-            self.signed_factor(self.add_node('Signed-factor', parent))
+            self.signed_num(self.add_node('Signed-factor', parent))
             self.codegen.code_gen("#arithmetic_op")
             self.G(self.add_node('G', parent))
         elif l in follow['G']: # G -> eps
@@ -777,18 +777,18 @@ class Parser:
             self.get_next_token()
             self.G(parent)
 
-    def signed_factor(self, parent):
+    def signed_num(self, parent):
         l = self.get_lookahead()
         if l == '+':
             self.codegen.code_gen("#symbol", self.lookahead)
             self.match('+', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_factor")
+            self.codegen.code_gen("#signed_num")
         elif l == '-':
             self.codegen.code_gen("#symbol", self.lookahead)
             self.match('-', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_factor")
+            self.codegen.code_gen("#signed_num")
         elif l in first['Factor']:
             self.factor(self.add_node('Factor', parent))
         elif l in follow['Signed-factor']: # Signed-factor -/-> eps
@@ -799,9 +799,9 @@ class Parser:
         else:
             self.print_error(f'Illegal {l}')
             self.get_next_token()
-            self.signed_factor(parent)
+            self.signed_num(parent)
 
-    def signed_factor_prime(self, parent):
+    def signed_num_prime(self, parent):
         l = self.get_lookahead()
         if l in first['Factor-prime']:
             self.factor_prime(self.add_node('Factor-prime', parent))
@@ -812,20 +812,20 @@ class Parser:
         else:
             self.print_error(f'Illegal {l}')
             self.get_next_token()
-            self.signed_factor_prime(parent)
+            self.signed_num_prime(parent)
 
-    def signed_factor_zegond(self, parent):
+    def signed_num_zegond(self, parent):
         l = self.get_lookahead()
         if l == '+':
             self.codegen.code_gen("#symbol", self.lookahead)
             self.match('+', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_factor")
+            self.codegen.code_gen("#signed_num")
         elif l == '-':
             self.codegen.code_gen("#symbol", self.lookahead)
             self.match('-', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_factor")
+            self.codegen.code_gen("#signed_num")
         elif l in first['Factor-zegond']:
             self.factor_zegond(self.add_node('Factor-zegond', parent))
         elif l in follow['Signed-factor-zegond']: # Signed-factor-zegond -/-> eps
@@ -836,7 +836,7 @@ class Parser:
         else:
             self.print_error(f'Illegal {l}')
             self.get_next_token()
-            self.signed_factor_zegond(parent)  
+            self.signed_num_zegond(parent)  
 
     def factor(self, parent): 
         l = self.get_lookahead()
@@ -884,7 +884,7 @@ class Parser:
             self.match('[', parent)
             self.expression(self.add_node('Expression', parent))
             self.match(']', parent)
-            self.codegen.code_gen("#array_address")
+            self.codegen.code_gen("#arr_element")
         elif l in follow['Var-prime']: # Var-prime -> eps
             self.add_node('epsilon', parent)
             return
@@ -901,7 +901,7 @@ class Parser:
             self.match('(', parent)
             self.args(self.add_node('Args', parent))
             self.match(')', parent)
-            self.codegen.code_gen("#output")
+            self.codegen.code_gen("#print")
         elif l in follow['Factor-prime']: # Factor-prime -> eps
             self.add_node('epsilon', parent)
             return
