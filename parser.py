@@ -2,7 +2,7 @@ from anytree import Node, RenderTree
 from anytree.exporter import DotExporter
 from first_and_follows import first, follow
 from scanner import Scanner
-from codegen import Codegen
+from semantics import Semantics
 
 class Parser:
     def __init__(self, input_path):
@@ -14,7 +14,7 @@ class Parser:
         self.tree = Node('Program')
         self.tree_file = open("parse_tree.txt", "w", encoding='utf-8-sig')
         self.error_file = open("syntax_errors.txt", "w")
-        self.codegen = Codegen()
+        self.semantics = Semantics()
 	
     def print_error(self, text):
         self.error = True
@@ -56,7 +56,7 @@ class Parser:
         #print(f'First Token {self.lookahead}')
         self.program(self.tree)
         if self.lookahead == '$':
-            self.codegen.save_pb()
+            self.semantics.save_pb()
             return
 
     def get_lookahead(self):
@@ -127,7 +127,7 @@ class Parser:
         l = self.get_lookahead()
         if l in first['Type-specifier']:
             self.type_specifier(self.add_node('Type-specifier', parent))
-            self.codegen.code_gen("#pid", self.lookahead)
+            self.semantics.code_gen("#pid", self.lookahead)
             self.match('ID', parent)
         elif l in follow['Declaration-initial']:
             parent.parent = None
@@ -173,13 +173,13 @@ class Parser:
         l = self.get_lookahead()
         if l == ';':
             self.match(';', parent)
-            self.codegen.code_gen("#pop")
+            self.semantics.code_gen("#pop")
         elif l == '[':
             self.match('[', parent)
-            self.codegen.code_gen("#pnum", self.lookahead)
+            self.semantics.code_gen("#pnum", self.lookahead)
             self.match('NUM', parent)
             self.match(']', parent)
-            self.codegen.code_gen("#declare_array")    
+            self.semantics.code_gen("#declare_array")    
             self.match(';', parent)
         elif l in follow['Var-declaration-prime']: # Var-declaration-prime -/-> eps
             parent.parent = None
@@ -209,7 +209,7 @@ class Parser:
         l = self.get_lookahead()
         if l == 'int':          
             self.match('int', parent)
-            self.codegen.code_gen("#pid", self.lookahead)
+            self.semantics.code_gen("#pid", self.lookahead)
             self.match('ID', parent)
             self.param_prime(self.add_node('Param-prime', parent)) 
             self.param_list(self.add_node('Param-list', parent)) 
@@ -229,7 +229,7 @@ class Parser:
     def param_list_void_abtar(self, parent):
         l = self.get_lookahead()
         if l == 'ID':
-            self.codegen.code_gen("#pid", self.lookahead)
+            self.semantics.code_gen("#pid", self.lookahead)
             self.match('ID', parent)
             self.param_prime(self.add_node('Param-prime', parent))
             self.param_list(self.add_node('Param-list', parent)) 
@@ -349,7 +349,7 @@ class Parser:
         if l in first['Expression']:
             self.expression(self.add_node('Expression', parent))
             self.match(';', parent)
-            self.codegen.code_gen("#pop")
+            self.semantics.code_gen("#pop")
         elif l == 'break':
             self.match('break', parent)
             self.match(';', parent)
@@ -373,12 +373,12 @@ class Parser:
             self.match('(', parent)
             self.expression(self.add_node('Expression', parent))
             self.match(')', parent)
-            self.codegen.code_gen("#save")
+            self.semantics.code_gen("#save")
             self.statement(self.add_node('Statement', parent))
             self.match('else', parent)
-            self.codegen.code_gen("#cond_jump")
+            self.semantics.code_gen("#cond_jump")
             self.statement(self.add_node('Statement', parent))
-            self.codegen.code_gen("#jump")
+            self.semantics.code_gen("#jump")
         elif l in follow['Selection-stmt']: # Selection-stmt -/-> eps
             parent.parent = None
             self.print_error(f'Missing Selection-stmt') 
@@ -395,12 +395,12 @@ class Parser:
         if l == 'while':
             self.match('while', parent)
             self.match('(', parent)
-            self.codegen.code_gen("#label")
+            self.semantics.code_gen("#label")
             self.expression(self.add_node('Expression', parent))
             self.match(')', parent)
-            self.codegen.code_gen("#save")
+            self.semantics.code_gen("#save")
             self.statement(self.add_node('Statement', parent))
-            self.codegen.code_gen("#while", self.lookahead)
+            self.semantics.code_gen("#while", self.lookahead)
         elif l in follow['Iteration-stmt']: # Iteration-stmt -/-> eps
             parent.parent = None
             self.print_error(f'Missing Iteration-stmt') 
@@ -495,7 +495,7 @@ class Parser:
     def var(self, parent):
         l = self.get_lookahead()
         if l == 'ID':
-            self.codegen.code_gen("#pid", self.lookahead)
+            self.semantics.code_gen("#pid", self.lookahead)
             self.match('ID', parent)
             self.var_prime(self.add_node('Var-prime', parent))
         elif l in follow['Var']: # Var -/-> eps
@@ -513,7 +513,7 @@ class Parser:
         if l in first['Simple-expression-zegond']:
             self.simple_expression_zegond(self.add_node('Simple-expression-zegond', parent))
         elif l == 'ID':
-            self.codegen.code_gen("#pid", self.lookahead)
+            self.semantics.code_gen("#pid", self.lookahead)
             self.match('ID', parent)
             self.B(self.add_node('B', parent))
         elif l in follow['Expression']: # Expression -/-> eps
@@ -531,12 +531,12 @@ class Parser:
         if l == '=':
             self.match('=', parent)
             self.expression(self.add_node('Expression', parent))
-            self.codegen.code_gen("#assign")
+            self.semantics.code_gen("#assign")
         elif l == '[':
             self.match('[', parent)
             self.expression(self.add_node('Expression', parent))
             self.match(']', parent)
-            self.codegen.code_gen("#arr_element", self.lookahead)
+            self.semantics.code_gen("#arr_element", self.lookahead)
             self.H(self.add_node('H', parent))
         elif l in first['Simple-expression-prime']:
             self.simple_expression_prime(self.add_node('Simple-expression-prime', parent))
@@ -554,7 +554,7 @@ class Parser:
         if l == '=':
             self.match('=', parent)
             self.expression(self.add_node('Expression', parent))
-            self.codegen.code_gen("#assign")
+            self.semantics.code_gen("#assign")
         elif l in first['G'] + first['D'] + first['C']:
             self.G(self.add_node('G', parent))
             self.D(self.add_node('D', parent))
@@ -605,7 +605,7 @@ class Parser:
         if l in first['Relop']:
             self.relop(self.add_node('Relop', parent))
             self.additive_expression(self.add_node('Additive-expression', parent))
-            self.codegen.code_gen("#arithmetic_op")
+            self.semantics.code_gen("#arithmetic_op")
         elif l in follow['C']: # C -> eps
             self.add_node('epsilon', parent)
             return
@@ -619,10 +619,10 @@ class Parser:
     def relop(self, parent):
         l = self.get_lookahead()
         if l == '<':
-            self.codegen.code_gen("#symbol", self.lookahead)
+            self.semantics.code_gen("#symbol", self.lookahead)
             self.match('<', parent)
         elif l == '==':
-            self.codegen.code_gen("#symbol", self.lookahead)
+            self.semantics.code_gen("#symbol", self.lookahead)
             self.match('==', parent)
         elif l in follow['Relop']: # Relop -/-> eps
             parent.parent = None
@@ -684,7 +684,7 @@ class Parser:
         if l in first['Addop']:
             self.addop(self.add_node('Addop', parent))
             self.term(self.add_node('Term', parent))
-            self.codegen.code_gen("#arithmetic_op")
+            self.semantics.code_gen("#arithmetic_op")
             self.D(self.add_node('D', parent))
         elif l in follow['D']: # D -> eps
             self.add_node('epsilon', parent)
@@ -699,10 +699,10 @@ class Parser:
     def addop(self, parent):
         l = self.get_lookahead()
         if l == '+':
-            self.codegen.code_gen("#symbol", self.lookahead)
+            self.semantics.code_gen("#symbol", self.lookahead)
             self.match('+', parent)
         elif l == '-':
-            self.codegen.code_gen("#symbol", self.lookahead)
+            self.semantics.code_gen("#symbol", self.lookahead)
             self.match('-', parent)
         elif l in follow['Addop']: # Addop -/-> eps
             parent.parent = None
@@ -762,10 +762,10 @@ class Parser:
     def G(self, parent):
         l = self.get_lookahead()
         if l == '*':
-            self.codegen.code_gen("#symbol", self.lookahead)
+            self.semantics.code_gen("#symbol", self.lookahead)
             self.match('*', parent)
             self.signed_num(self.add_node('Signed-factor', parent))
-            self.codegen.code_gen("#arithmetic_op")
+            self.semantics.code_gen("#arithmetic_op")
             self.G(self.add_node('G', parent))
         elif l in follow['G']: # G -> eps
             self.add_node('epsilon', parent)
@@ -780,15 +780,15 @@ class Parser:
     def signed_num(self, parent):
         l = self.get_lookahead()
         if l == '+':
-            self.codegen.code_gen("#symbol", self.lookahead)
+            self.semantics.code_gen("#symbol", self.lookahead)
             self.match('+', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_num")
+            self.semantics.code_gen("#signed_num")
         elif l == '-':
-            self.codegen.code_gen("#symbol", self.lookahead)
+            self.semantics.code_gen("#symbol", self.lookahead)
             self.match('-', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_num")
+            self.semantics.code_gen("#signed_num")
         elif l in first['Factor']:
             self.factor(self.add_node('Factor', parent))
         elif l in follow['Signed-factor']: # Signed-factor -/-> eps
@@ -817,15 +817,15 @@ class Parser:
     def signed_num_zegond(self, parent):
         l = self.get_lookahead()
         if l == '+':
-            self.codegen.code_gen("#symbol", self.lookahead)
+            self.semantics.code_gen("#symbol", self.lookahead)
             self.match('+', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_num")
+            self.semantics.code_gen("#signed_num")
         elif l == '-':
-            self.codegen.code_gen("#symbol", self.lookahead)
+            self.semantics.code_gen("#symbol", self.lookahead)
             self.match('-', parent)
             self.factor(self.add_node('Factor', parent))
-            self.codegen.code_gen("#signed_num")
+            self.semantics.code_gen("#signed_num")
         elif l in first['Factor-zegond']:
             self.factor_zegond(self.add_node('Factor-zegond', parent))
         elif l in follow['Signed-factor-zegond']: # Signed-factor-zegond -/-> eps
@@ -845,11 +845,11 @@ class Parser:
             self.expression(self.add_node('Expression', parent))
             self.match(')', parent)
         elif l == 'ID':
-            self.codegen.code_gen("#pid", self.lookahead)
+            self.semantics.code_gen("#pid", self.lookahead)
             self.match('ID', parent)
             self.var_call_prime(self.add_node('Var-call-prime', parent))
         elif l == 'NUM':
-            self.codegen.code_gen("#pnum", self.lookahead)
+            self.semantics.code_gen("#pnum", self.lookahead)
             self.match('NUM', parent)
         elif l in follow['Factor']: # Factor -/-> eps
             parent.parent = None
@@ -884,7 +884,7 @@ class Parser:
             self.match('[', parent)
             self.expression(self.add_node('Expression', parent))
             self.match(']', parent)
-            self.codegen.code_gen("#arr_element")
+            self.semantics.code_gen("#arr_element")
         elif l in follow['Var-prime']: # Var-prime -> eps
             self.add_node('epsilon', parent)
             return
@@ -901,7 +901,7 @@ class Parser:
             self.match('(', parent)
             self.args(self.add_node('Args', parent))
             self.match(')', parent)
-            self.codegen.code_gen("#print")
+            self.semantics.code_gen("#print")
         elif l in follow['Factor-prime']: # Factor-prime -> eps
             self.add_node('epsilon', parent)
             return
@@ -919,7 +919,7 @@ class Parser:
             self.expression(self.add_node('Expression', parent))
             self.match(')', parent)
         elif l == 'NUM':
-            self.codegen.code_gen("#pnum", self.lookahead)
+            self.semantics.code_gen("#pnum", self.lookahead)
             self.match('NUM', parent)        
         elif l in follow['Factor-zegond']: # Factor-zegond -/-> eps
             parent.parent = None
