@@ -15,7 +15,14 @@ class Semantics:
             'arr_element': self.arr_element,
             'symbol': self.symbol,
             'signed_num': self.signed_num,
-            'print': self.print_message
+            'print': self.print_message,
+            # for loop
+            'assign_vars': self.assign_vars,
+            'jpf_for': self.jpf_for,
+            'label_for': self.label_for,
+            'vars_begin': self.vars_begin,
+            'var_zegond': self.var_zegond,
+            'vars_end': self.vars_end
         }
         self.pb_index = 0
         self.cur_data_address = 200
@@ -90,6 +97,7 @@ class Semantics:
         self.pb[jpf_pb_index] = f'(JPF, {if_exp}, {self.pb_index + 1},)'
         self.sem_stack.append(self.pb_index)
         self.pb_write('')
+
     
     def pid(self, arg):
         if self.data.__contains__(arg): # Check if the variable has already been defined
@@ -102,10 +110,10 @@ class Semantics:
             self.pb_write(f'(ASSIGN, #0, {address}, )')
 
     def pnum(self, arg):
-        temp_address = self.new_temp()
-        self.temporaries.update({temp_address: arg})
-        self.sem_stack.append(temp_address)
-        self.pb_write(f'(ASSIGN, #{arg}, {temp_address}, )')
+        t = self.new_temp()
+        self.temporaries.update({t: arg})
+        self.sem_stack.append(t)
+        self.pb_write(f'(ASSIGN, #{arg}, {t}, )')
 
     def assign(self, arg):
         content_address = self.sem_stack.pop()
@@ -163,4 +171,67 @@ class Semantics:
         # For now we assume that every function call is output()
         message = self.sem_stack.pop()
         self.pb_write(f'(PRINT, {message}, , )')
+
+    #######################
+    # FOR LOOP
+    #######################
+    def vars_begin(self, arg):
+        t = self.new_temp()
+        addr_first_var = self.sem_stack.pop()
+        self.pb_write(f'(ASSIGN, #{addr_first_var}, {t}, )')
+        self.sem_stack.append(t)    # addr of first var
+        self.sem_stack.append(1)    # counter
+
+    def var_zegond(self, arg):
+        t = self.new_temp()
+        addr_next_var = self.sem_stack.pop()
+        counter = self.sem_stack.pop()
+        self.pb_write(f'(ASSIGN, #{addr_next_var}, {t}, )')
+        self.sem_stack.append(counter + 1)
+
+    def vars_end(self, arg):
+        counter = self.sem_stack.pop()
+        addr_first_var = self.sem_stack.pop()
+        temp_counter = self.new_temp()
+        temp_addr_first_var = self.new_temp()
+        self.pb_write(f'(ASSIGN, #{counter}, {temp_counter}, )')
+        self.pb_write(f'(ASSIGN, #{addr_first_var}, {temp_addr_first_var}, )')
+        self.sem_stack.append(temp_counter)
+        self.sem_stack.append(temp_addr_first_var)
+
+    def label_for(self, arg):
+        self.sem_stack.append(self.pb_index) # target of jpf_for
+
+    def assign_vars(self, arg):
+        # idx saved by label            (top)
+        # addr of addr of current var   (top-1)
+        # current counter               (top-2)
+        # addr of pid                   (top-3)
+        addr_addr_cur_var = self.sem_stack[-2]
+        addr_pid = self.sem_stack[-4]
+        self.pb_write(f'(ASSIGN, @{addr_addr_cur_var}, {addr_pid}, )')
+        self.pb_write(f'(ASSIGN, @{addr_pid}, {addr_pid}, )')
+
+
+    def jpf_for(self, arg):
+        # idx saved by label            (top)
+        # addr of addr of current var   (top-1)
+        # current counter               (top-2)
+        # addr of pid                   (top-3)
+        label_index = self.sem_stack.pop()
+        addr_addr_cur_var = self.sem_stack.pop()
+        counter = self.sem_stack.pop()
+        addr_pid = self.sem_stack.pop()
+        self.pb_write(f'(ADD, {addr_addr_cur_var}, #4, {addr_addr_cur_var})')
+        self.pb_write(f'(SUB, {counter}, #1, {counter})')
+        t = self.new_temp()
+        self.pb_write(f'(EQ, {counter}, #0, {t})')
+        self.pb_write(f'(JPF, {t}, {label_index},)')
+
+    
+
+    
+
+
+
     

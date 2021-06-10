@@ -447,10 +447,15 @@ class Parser:
         l = self.get_lookahead()
         if l == 'for':
             self.match('for', parent)
+            self.semantics.code_gen("#pid", self.lookahead)
             self.match('ID', parent)
             self.match('=', parent)
             self.vars(self.add_node('Vars', parent))
+            self.semantics.code_gen("#label_for")
+            self.semantics.code_gen("#assign_vars")
             self.statement(self.add_node('Statement', parent))
+            self.semantics.code_gen("#jpf_for")
+
         elif l in follow['For-stmt']: # For-stmt -/-> eps
             parent.parent = None
             self.print_error(f'Missing For-stmt')
@@ -465,6 +470,7 @@ class Parser:
         l = self.get_lookahead()
         if l in first['Var']:
             self.var(self.add_node('Var', parent))
+            self.semantics.code_gen("#vars_begin")
             self.var_zegond(self.add_node('Var-zegond', parent))
         elif l in follow['Vars']: # Vars -/-> eps
             parent.parent = None
@@ -481,8 +487,10 @@ class Parser:
         if l == ',':
             self.match(',', parent)
             self.var(self.add_node('Var', parent))
+            self.semantics.code_gen("#var_zegond")
             self.var_zegond(self.add_node('Var-zegond', parent))
         elif l in follow['Var-zegond']: # Var-zegond -> eps
+            self.semantics.code_gen("#vars_end")
             self.add_node('epsilon', parent)
             return
         elif l == '$':
