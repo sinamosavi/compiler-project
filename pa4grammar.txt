@@ -29,14 +29,14 @@ Statement -> Iteration-stmt
 Statement -> Return-stmt
 Statement -> For-stmt
 Expression-stmt -> Expression ; #pop
-Expression-stmt -> break ;
+Expression-stmt -> #break break ;
 Expression-stmt -> ;
 Selection-stmt -> if ( Expression ) #save Statement else #cond_jump Statement #jump
-Iteration-stmt -> while ( #label Expression ) #save Statement #while
+Iteration-stmt -> #break_save while ( #label Expression ) #save Statement #while
 Return-stmt -> return Return-stmt-prime
 Return-stmt-prime -> ;
 Return-stmt-prime -> Expression ;
-For-stmt -> for #pid ID = Vars #label_for #assign_vars Statement #jpf_for
+For-stmt -> #break_save for #pid ID = Vars #label_for #assign_vars Statement #jpf_for
 Vars -> Var #vars_begin Var-zegond
 Var-zegond -> , Var #var_zegond Var-zegond
 Var-zegond -> #vars_end ε

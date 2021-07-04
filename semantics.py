@@ -22,15 +22,20 @@ class Semantics:
             'label_for': self.label_for,
             'vars_begin': self.vars_begin,
             'var_zegond': self.var_zegond,
-            'vars_end': self.vars_end
+            'vars_end': self.vars_end,
+            # break
+            'break_save': self.break_save,
+            'break': self.break_
         }
         self.pb_index = 0
         self.cur_data_address = 200
-        self.cur_temp_address = 800
+        self.cur_temp_address = 1000
         self.sem_stack = [] # Semantic stack
         self.pb = [] # Program block
         self.temporaries = {}
         self.data = {}
+
+        self.for_while_break_address = []
 
     def code_gen(self, action_symbol, arg = None):
         action_symbol = action_symbol[1:] # Remove the '#' character at the start
@@ -84,6 +89,9 @@ class Semantics:
         # pb_index + 1: target of JPF
         self.pb[jpf_pb_index] = f'(JPF, {while_exp}, {self.pb_index + 1}, )'
         self.pb_write(f'(JP, {label + 1}, , )')
+        
+        self.pb[self.for_while_break_address.pop()] = f'(JP, {self.pb_index}, ,)'
+        
     
     def jump(self, arg):
         jp_pb_index = self.sem_stack.pop() # empty idx reserved in jpf for jp
@@ -222,11 +230,27 @@ class Semantics:
         addr_addr_cur_var = self.sem_stack.pop()
         counter = self.sem_stack.pop()
         addr_pid = self.sem_stack.pop()
+        # addr_break = self.sem_stack.pop()
         self.pb_write(f'(ADD, {addr_addr_cur_var}, #4, {addr_addr_cur_var})')
         self.pb_write(f'(SUB, {counter}, #1, {counter})')
         t = self.new_temp()
         self.pb_write(f'(EQ, {counter}, #0, {t})')
         self.pb_write(f'(JPF, {t}, {label_index},)')
+
+        self.pb[self.for_while_break_address.pop()] = f'(JP, {self.pb_index}, ,)'
+
+
+    #######################
+    # BREAK
+    #######################
+
+    def break_save(self, arg):
+        self.pb_write(f'(JP, {self.pb_index + 2}, , )')
+        self.for_while_break_address.append(self.pb_index)
+        self.pb_write('')
+
+    def break_(self, arg):
+        self.pb_write(f'(JP, {self.for_while_break_address[-1]}, , )')
 
     
 

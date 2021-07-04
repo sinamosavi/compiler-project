@@ -351,6 +351,7 @@ class Parser:
             self.match(';', parent)
             self.semantics.code_gen("#pop")
         elif l == 'break':
+            self.semantics.code_gen("#break")
             self.match('break', parent)
             self.match(';', parent)
         elif l == ';':
@@ -393,6 +394,7 @@ class Parser:
     def iteration_stmt(self, parent):
         l = self.get_lookahead()
         if l == 'while':
+            self.semantics.code_gen("#break_save")
             self.match('while', parent)
             self.match('(', parent)
             self.semantics.code_gen("#label")
@@ -446,6 +448,7 @@ class Parser:
     def for_stmt(self, parent):
         l = self.get_lookahead()
         if l == 'for':
+            self.semantics.code_gen("#break_save")
             self.match('for', parent)
             self.semantics.code_gen("#pid", self.lookahead)
             self.match('ID', parent)
