@@ -308,8 +308,8 @@ class Semantics:
         if(func_name != "main"):
             # Todo: Handle arguments
             # Pop one value from scope stack
-            self.pb_write(f'(ASSIGN, 8, 20, )')
             self.pb_write(f'(SUB, 8, #4, 8)')
+            self.pb_write(f'(ASSIGN, @8, 20, )')
             # Jump to return_address
             self.pb_write(f'(JP, @20, , )')
         else:
