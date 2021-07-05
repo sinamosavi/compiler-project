@@ -441,6 +441,7 @@ class Parser:
         l = self.get_lookahead()
         if l == ';':
             self.match(';', parent)
+            self.semantics.code_gen("#return_void")
         elif l in first['Expression']:
             self.expression(self.add_node('Expression', parent))
             self.match(';', parent)

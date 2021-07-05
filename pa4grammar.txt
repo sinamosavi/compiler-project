@@ -34,7 +34,7 @@ Expression-stmt -> ;
 Selection-stmt -> if ( Expression ) #save Statement else #cond_jump Statement #jump
 Iteration-stmt -> #break_save while ( #label Expression ) #save Statement #while
 Return-stmt -> return Return-stmt-prime #return
-Return-stmt-prime -> ;
+Return-stmt-prime -> ; #return_void
 Return-stmt-prime -> Expression ;
 For-stmt -> #break_save for #pid ID = Vars #label_for #assign_vars Statement #jpf_for
 Vars -> Var #vars_begin Var-zegond

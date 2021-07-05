@@ -53,6 +53,7 @@ class Semantics:
             'func_def_start': self.func_def_start,
             'func_def_end': self.func_def_end,
             'return': self._return,
+            'return_void': self.return_void,
             'func_call_start': self.func_call_start,
             'func_call_end': self.func_call_end,
             'label_func': self.label_func,
@@ -182,6 +183,7 @@ class Semantics:
         (self.data[self.cur_scope]).update({arg: Symbol(address, 'int')})
         self.sem_stack.append(address)
         self.pb_write(f'(ASSIGN, #0, {address}, )')
+        self.last_id = arg
 
     def pnum(self, arg):
         t = self.new_temp()
@@ -372,33 +374,44 @@ class Semantics:
             # Find function address
             func_address = (self.data[0])[func_name].address
             func_line = self.func_start[func_address]
+            
+            # Arguments
+            arg_names = self.func_args[func_address]
+            for i in range(0, len(arg_names)):
+                arg_name = arg_names[-i]
+                arg_symbol = self.data[func_address][arg_name]
+                arg_address = arg_symbol.address
+                passed_address = self.sem_stack.pop()
+                # For now we don't handle passing arrays
+                self.pb_write(f'(ASSIGN, {passed_address}, {arg_address}, )')
+                
+                print(f'Popping {passed_address}')
+            
             # Push the return address into scope stack
-            # Todo: Push the entirety of activation record to scope stack (currently haphazardly implemented)
             self.pb_write(f'(ASSIGN, #{self.pb_index + 3}, @8, )')
             self.pb_write(f'(ADD, 8, #4, 8)')
             # Jump to the start of the function 
             self.pb_write(f'(JP, {func_line}, , )')
-            ### self.scope_stack.append(ActivationRecord(result_address = 0, args = {}, return_address = self.pb_index + 2))
-            arg_names = self.func_args[func_address]
-            for i in range(0, len(arg_names)):
-                print(f'Popping {self.sem_stack.pop()}')
             #Push return value to the stack
             self.sem_stack.append(self.return_val_address)
             
             
 
     def _return(self, arg):
-        # Todo: Change return value
         val_address = self.sem_stack.pop()
         print(f'Return value: {self.return_val_address}')
         #self.pb_write(f'(ASSIGN, {return_val_address}, 4, )')
-        # Todo: Jump to return address
         self.pb_write(f'(SUB, 8, #4, 8)')
         self.pb_write(f'(ASSIGN, @8, 20, )') # We use address 20 as a temp register 
-        #Write to return value register
+        # Write to return value register
         self.pb_write(f'(ASSIGN, {val_address}, 4, )')
         # Jump to return_address
         self.pb_write(f'(JP, @20, , )')
+    
+    def return_void(self, arg):
+        # We just assume to return 0 instead of nothing
+        self.pb_write(f'(ASSIGN, #0, 16, )') # Address 16 reserved for this purpose
+        self.sem_stack.append(16)
     
     def label_func(self, arg):
         func_name = arg
@@ -415,7 +428,8 @@ class Semantics:
         func_address = self.cur_scope
         arr_name = self.last_id
         # Mark parameter as an array
-        self.data[func_address][arr_name].makeArray()
+        print(f'Making param arr - arr_name: {arr_name} - func_address: {func_address}')
+        (self.data[func_address][arr_name]).makeArray()
         
         
 
