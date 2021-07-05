@@ -15,6 +15,8 @@ class Parser:
         self.tree_file = open("parse_tree.txt", "w", encoding='utf-8-sig')
         self.error_file = open("syntax_errors.txt", "w")
         self.semantics = Semantics()
+        
+        self.last_match = None
 	
     def print_error(self, text):
         self.error = True
@@ -79,6 +81,7 @@ class Parser:
             if expected_token == '$':
                 self.add_node(self.lookahead, parent)
             else:
+                self.last_match = f'{self.lookahead}'
                 self.add_node(self.lookahead, parent, self.lookahead_type)
                 self.get_next_token()
         else:
@@ -156,10 +159,14 @@ class Parser:
     def fun_declaration_prime(self, parent):
         l = self.get_lookahead()
         if l == '(':
+            func_name = self.last_match
+            self.semantics.code_gen("#func_def_start", func_name)
             self.match('(', parent)
             self.params(self.add_node('Params', parent))
             self.match(')', parent)
+            self.semantics.code_gen("#label_func", func_name)
             self.compound_stmt(self.add_node('Compound-stmt', parent))
+            self.semantics.code_gen("#func_def_end", func_name)
         elif l in follow['Fun-declaration-prime']: # Fun-declaration-prime -/-> eps
             parent.parent = None
             self.print_error(f'Missing Fun-declaration-prime')  
@@ -418,6 +425,7 @@ class Parser:
         if l == 'return':
             self.match('return', parent)
             self.return_stmt_prime(self.add_node('Return-stmt-prime', parent))
+            self.semantics.code_gen("#return", self.lookahead)
         elif l in follow['Return-stmt']: # Return-stmt -/-> eps
             parent.parent = None
             self.print_error(f'Missing Return-stmt')
@@ -875,9 +883,12 @@ class Parser:
     def var_call_prime(self, parent):
         l = self.get_lookahead()
         if l == '(':
+            func_name = self.last_match
+            self.semantics.code_gen("#func_call_start", func_name)
             self.match('(', parent)
             self.args(self.add_node('Args', parent))
             self.match(')', parent)
+            self.semantics.code_gen("#func_call_end", func_name)
         elif l in first['Var-prime']:
             self.var_prime(self.add_node('Var-prime', parent))
         elif l in follow['Var-call-prime']: # Var-prime -> eps
@@ -909,10 +920,13 @@ class Parser:
     def factor_prime(self, parent):
         l = self.get_lookahead()
         if l == '(':
+            #print(f'last: {self.last_match}')
+            func_name = self.last_match
+            self.semantics.code_gen("#func_call_start", func_name)
             self.match('(', parent)
             self.args(self.add_node('Args', parent))
             self.match(')', parent)
-            self.semantics.code_gen("#print")
+            self.semantics.code_gen("#func_call_end", func_name)
         elif l in follow['Factor-prime']: # Factor-prime -> eps
             self.add_node('epsilon', parent)
             return
