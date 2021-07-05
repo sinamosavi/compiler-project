@@ -1,8 +1,24 @@
-class ActivationRecord:
-    def __init__(self, result_address = 0, args = {}, return_address = -1):
-        self.result_address = result_address
-        self.args = args
-        self.return_address = return_address
+# class ActivationRecord:
+    # def __init__(self, result_address = 0, args = {}, return_address = -1):
+        # self.result_address = result_address
+        # self.args = args
+        # self.return_address = return_address
+        
+class Symbol:
+    def __init__(self, address, type = 'int', returnType = 'void'):
+        self.address = address
+        # Options: 'int', 'arr', 'void'
+        self.type = type
+        self.returnType = returnType
+    
+    def __repr__(self):
+        return str(self.__dict__)
+    
+    def makeArray(self):
+        self.type = 'arr'
+    
+    def returnVoid(self):
+        self.returnType = 'void'
 
 class Semantics:
     def __init__(self):
@@ -15,6 +31,7 @@ class Semantics:
             'jump': self.jump,
             'cond_jump': self.cond_jump,
             'pid': self.pid,
+            'define_id': self.define_id,
             'pnum': self.pnum,
             'assign': self.assign,
             'arithmetic_op': self.arithmetic_op,
@@ -38,9 +55,11 @@ class Semantics:
             'return': self._return,
             'func_call_start': self.func_call_start,
             'func_call_end': self.func_call_end,
-            'label_func': self.label_func
+            'label_func': self.label_func,
+            'arr_param': self.arr_param
         }
         self.pb_index = 0
+        # Addresses 8 and 20 reserved for the stack pointer, 4 for return value
         self.cur_data_address = 200
         self.cur_temp_address = 1000
         self.stack_address = 5000
@@ -52,17 +71,18 @@ class Semantics:
 		
         self.data = {}
         self.data.update({0: {}})
-        self.global_data = {}
-        self.local_data = {}
-        self.return_address = None
-        self.cur_scope = 0 # 0: Global, 1: main or local
+        #self.global_data = {}
+        #self.local_data = {}
+        self.return_val_address = 4 # This will always remain constant
+        self.cur_scope = 0 # 0: Global, x: Address of function
         self.last_id = None
         # Jump to the start of main() (address currently unknown)
         self.pb_write(f'(JP, ?, , )')
         # Pointer to the top of scope stack at 8 
         
         #self.scope_stack = []
-        self.func_start = {}
+        self.func_start = {} # To save the starting line of the function in PB
+        self.func_args = {} # To save the list of args for each function
 		
 
     def code_gen(self, action_symbol, arg = None):
@@ -98,9 +118,12 @@ class Semantics:
         array_len_address = self.sem_stack.pop()
         # Dedicate addresses for non-zero array indices 
         array_len = int(self.temporaries[array_len_address])
+        address = 0
         for i in range(1, array_len):
             address = self.find_address()
             self.pb_write(f'(ASSIGN, #0, {address}, )')
+        # Make sure we know this is an array
+        # todo
     
     def label(self, arg):
         self.sem_stack.append(self.pb_index - 1) # idx of last added statement (target of jp)
@@ -137,19 +160,28 @@ class Semantics:
     
     def pid(self, arg):
         if self.data[self.cur_scope].__contains__(arg): # Check if the variable has already been defined in this scope
-            address = (self.data[self.cur_scope])[arg]
+            address = (self.data[self.cur_scope])[arg].address
+            #print(f'Scope {self.cur_scope} contains {arg} with address {address}')
             self.sem_stack.append(address)
         elif self.data[0].__contains__(arg): # Check if the variable has already been defined as a global
-            address = (self.data[0])[arg]
+            address = (self.data[0])[arg].address
             self.sem_stack.append(address)
         # Todo: Sometimes we still define new var even if a global var with the same name exists, and sometimes we don't. Need to somehow handle this.
         else: # If not, do it
-            address = self.find_address()
-            (self.data[self.cur_scope]).update({arg: address})
-            self.sem_stack.append(address)
-            self.pb_write(f'(ASSIGN, #0, {address}, )')
+            # address = self.find_address()
+            # (self.data[self.cur_scope]).update({arg: Symbol(address, 'int')})
+            # self.sem_stack.append(address)
+            # self.pb_write(f'(ASSIGN, #0, {address}, )')
+            self.define_id(arg)
         # We need to save the name of functions
         self.last_id = arg
+        
+        
+    def define_id(self, arg):
+        address = self.find_address()
+        (self.data[self.cur_scope]).update({arg: Symbol(address, 'int')})
+        self.sem_stack.append(address)
+        self.pb_write(f'(ASSIGN, #0, {address}, )')
 
     def pnum(self, arg):
         t = self.new_temp()
@@ -161,6 +193,7 @@ class Semantics:
         content_address = self.sem_stack.pop()
         id_address = self.sem_stack.pop()
         self.sem_stack.append(id_address)
+        print(f'Assigning to {id_address}')
         self.pb_write(f'(ASSIGN, {content_address}, {id_address}, )')
 
     def arithmetic_op(self, arg):
@@ -309,7 +342,7 @@ class Semantics:
             # Todo: Handle arguments
             # Pop one value from scope stack
             self.pb_write(f'(SUB, 8, #4, 8)')
-            self.pb_write(f'(ASSIGN, @8, 20, )')
+            self.pb_write(f'(ASSIGN, @8, 20, )') # We use address 20 as a temp register 
             # Jump to return_address
             self.pb_write(f'(JP, @20, , )')
         else:
@@ -337,7 +370,7 @@ class Semantics:
             self.sem_stack.append(0)
         else:
             # Find function address
-            func_address = (self.data[0])[func_name]
+            func_address = (self.data[0])[func_name].address
             func_line = self.func_start[func_address]
             # Push the return address into scope stack
             # Todo: Push the entirety of activation record to scope stack (currently haphazardly implemented)
@@ -346,18 +379,43 @@ class Semantics:
             # Jump to the start of the function 
             self.pb_write(f'(JP, {func_line}, , )')
             ### self.scope_stack.append(ActivationRecord(result_address = 0, args = {}, return_address = self.pb_index + 2))
+            arg_names = self.func_args[func_address]
+            for i in range(0, len(arg_names)):
+                print(f'Popping {self.sem_stack.pop()}')
+            #Push return value to the stack
+            self.sem_stack.append(self.return_val_address)
+            
             
 
     def _return(self, arg):
-        print(f'return')
         # Todo: Change return value
+        val_address = self.sem_stack.pop()
+        print(f'Return value: {self.return_val_address}')
+        #self.pb_write(f'(ASSIGN, {return_val_address}, 4, )')
+        # Todo: Jump to return address
+        self.pb_write(f'(SUB, 8, #4, 8)')
+        self.pb_write(f'(ASSIGN, @8, 20, )') # We use address 20 as a temp register 
+        #Write to return value register
+        self.pb_write(f'(ASSIGN, {val_address}, 4, )')
+        # Jump to return_address
+        self.pb_write(f'(JP, @20, , )')
     
     def label_func(self, arg):
         func_name = arg
         # Find function address
-        func_address = (self.data[0])[func_name]
+        func_address = (self.data[0])[func_name].address
         # We are currently at the function start line 
         self.func_start.update({func_address: self.pb_index})
+        # Save the list of arg names for the function
+        arg_names = list(self.data[func_address].keys())
+        self.func_args.update({func_address: arg_names})
+        #print(f'Function args: {list(self.data[func_address].keys())}')
+        
+    def arr_param(self, arg):
+        func_address = self.cur_scope
+        arr_name = self.last_id
+        # Mark parameter as an array
+        self.data[func_address][arr_name].makeArray()
         
         
 

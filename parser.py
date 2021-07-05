@@ -130,7 +130,7 @@ class Parser:
         l = self.get_lookahead()
         if l in first['Type-specifier']:
             self.type_specifier(self.add_node('Type-specifier', parent))
-            self.semantics.code_gen("#pid", self.lookahead)
+            self.semantics.code_gen("#define_id", self.lookahead)
             self.match('ID', parent)
         elif l in follow['Declaration-initial']:
             parent.parent = None
@@ -216,7 +216,7 @@ class Parser:
         l = self.get_lookahead()
         if l == 'int':          
             self.match('int', parent)
-            self.semantics.code_gen("#pid", self.lookahead)
+            self.semantics.code_gen("#define_id", self.lookahead)
             self.match('ID', parent)
             self.param_prime(self.add_node('Param-prime', parent)) 
             self.param_list(self.add_node('Param-list', parent)) 
@@ -286,6 +286,7 @@ class Parser:
         if l == '[':
             self.match('[', parent)
             self.match(']', parent)
+            self.semantics.code_gen("#arr_param")
         elif l in follow['Param-prime']: # Param-prime -> eps
             self.add_node('epsilon', parent)
             return
