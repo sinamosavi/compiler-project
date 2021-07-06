@@ -84,6 +84,7 @@ class Semantics:
         #self.scope_stack = []
         self.func_start = {} # To save the starting line of the function in PB
         self.func_args = {} # To save the list of args for each function
+        self.is_main = False
 		
 
     def code_gen(self, action_symbol, arg = None):
@@ -219,9 +220,29 @@ class Semantics:
         arr_index = self.sem_stack.pop()
         arr_addr = self.sem_stack.pop()
         t = self.new_temp()
-        self.sem_stack.append('@' + str(t))  
-        self.pb_write(f'(MULT, {arr_index}, #4, {t})')
-        self.pb_write(f'(ADD, #{arr_addr}, {t}, {t})')
+        
+        
+        # Check if it's a passed array
+        scope_data = self.data[self.cur_scope]
+        arr_name = '__unknown__'
+        for key, value in scope_data.items():
+            if value.address == arr_addr:
+                arr_name = f'{key}'
+                break
+        
+        # Handle passed arrays
+        print(f'Here is_main:{self.is_main} and func_args: {self.func_args[self.cur_scope]} and arr_name:{arr_name}')
+        if(self.is_main == False and arr_name in self.func_args[self.cur_scope]):
+            symbol = self.data[self.cur_scope][arr_name]
+            t1 = self.new_temp()
+            self.pb_write(f'(ASSIGN, {arr_addr}, {t}, )')
+            self.pb_write(f'(MULT, {arr_index}, #4, {t1})')
+            self.pb_write(f'(ADD, {t}, {t1}, {t})')
+            self.sem_stack.append('@' + str(t))
+        else:
+            self.pb_write(f'(MULT, {arr_index}, #4, {t})')
+            self.pb_write(f'(ADD, #{arr_addr}, {t}, {t})')
+            self.sem_stack.append('@' + str(t))
 
     def symbol(self, arg):
         self.sem_stack.append(arg)
@@ -331,6 +352,7 @@ class Semantics:
         print(f'start_def {func_name} with address {func_address}: {self.sem_stack} {self.data}')
         # Update the first instruction to jump into main()
         if(func_name == "main"):
+            self.is_main = True
             self.pb[0] = f'(JP, {self.pb_index}, , )'
             self.pb_write(f'(ASSIGN, #{self.stack_address} , 8, )') # We reserve address 8 for a pointer to the head of the stack
             self.pb_write(f'(ASSIGN, #{self.stack_address + 4} , 12, )') # We reserve address 12 for a pointer to the return value address
@@ -384,13 +406,17 @@ class Semantics:
             # Arguments
             arg_names = self.func_args[func_address]
             for i in range(0, len(arg_names)):
-                arg_name = arg_names[-i]
+                arg_name = arg_names[len(arg_names) - i - 1]
                 arg_symbol = self.data[func_address][arg_name]
                 arg_address = arg_symbol.address
                 passed_address = self.sem_stack.pop()
-                # For now we don't handle passing arrays
-                self.pb_write(f'(ASSIGN, {passed_address}, {arg_address}, )')
-                print(f'Popping {passed_address}')
+                
+                if(arg_symbol.type == 'arr'):
+                    self.pb_write(f'(ASSIGN, #{passed_address}, {arg_address}, )')
+                else:
+                    self.pb_write(f'(ASSIGN, {passed_address}, {arg_address}, )')
+                    
+                print(f'Popping {arg_name}')
 
             # Push the return address and return value into scope stack
             self.pb_write(f'(ASSIGN, #{self.pb_index + 4}, @8, )')
@@ -431,6 +457,7 @@ class Semantics:
         self.func_start.update({func_address: self.pb_index})
         # Save the list of arg names for the function
         arg_names = list(self.data[func_address].keys())
+        print(f'Booooooooooooooooooyakasha: {arg_names}')
         self.func_args.update({func_address: arg_names})
         #print(f'Function args: {list(self.data[func_address].keys())}')
         
