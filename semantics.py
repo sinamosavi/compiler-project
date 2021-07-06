@@ -332,7 +332,8 @@ class Semantics:
         # Update the first instruction to jump into main()
         if(func_name == "main"):
             self.pb[0] = f'(JP, {self.pb_index}, , )'
-            self.pb_write(f'(ASSIGN, #{self.stack_address} , 8, )') # We reserve address 8 in the memory for a pointer to the head of the stack
+            self.pb_write(f'(ASSIGN, #{self.stack_address} , 8, )') # We reserve address 8 for a pointer to the head of the stack
+            self.pb_write(f'(ASSIGN, #{self.stack_address + 4} , 12, )') # We reserve address 12 for a pointer to the return value address
             ### self.scope_stack.append(ActivationRecord())
         
         
@@ -342,10 +343,14 @@ class Semantics:
         # JP to return address except for main
         if(func_name != "main"):
             # Todo: Handle arguments
-            # Pop one value from scope stack
-            self.pb_write(f'(SUB, 8, #4, 8)')
-            self.pb_write(f'(ASSIGN, @8, 20, )') # We use address 20 as a temp register 
-            # Jump to return_address
+            # Pop one value from scope stack (8: @return_address, 12: @return_value)
+            self.pb_write(f'(SUB, 8, #8, 8)')
+            self.pb_write(f'(SUB, 12, #8, 12)')
+            self.pb_write(f'(ASSIGN, @8, 20, )') # We use address 20 as a temp register
+        # @return value which equals @return_address + 4 
+        # Write to return value register
+            self.pb_write(f'(ASSIGN, #{0}, @12, )')
+        # Jump to return_address
             self.pb_write(f'(JP, @20, , )')
         else:
             pass
@@ -372,7 +377,8 @@ class Semantics:
             self.sem_stack.append(0)
         else:
             # Find function address
-            func_address = (self.data[0])[func_name].address
+            #print(f'here {func_name}')
+            func_address = self.data[0][func_name].address
             func_line = self.func_start[func_address]
             
             # Arguments
@@ -384,34 +390,38 @@ class Semantics:
                 passed_address = self.sem_stack.pop()
                 # For now we don't handle passing arrays
                 self.pb_write(f'(ASSIGN, {passed_address}, {arg_address}, )')
-                
                 print(f'Popping {passed_address}')
-            
-            # Push the return address into scope stack
-            self.pb_write(f'(ASSIGN, #{self.pb_index + 3}, @8, )')
-            self.pb_write(f'(ADD, 8, #4, 8)')
+
+            # Push the return address and return value into scope stack
+            self.pb_write(f'(ASSIGN, #{self.pb_index + 4}, @8, )')
+            self.pb_write(f'(ADD, 8, #8, 8)')
+            self.pb_write(f'(ADD, 12, #8, 12)')
+            #self.pb_write(f'(ASSIGN, #{passed_address}, @28, )')
             # Jump to the start of the function 
             self.pb_write(f'(JP, {func_line}, , )')
             #Push return value to the stack
-            self.sem_stack.append(self.return_val_address)
+            t = self.new_temp()
+            self.pb_write(f'(ASSIGN, @12, {t}, )')
+            self.sem_stack.append(t)
             
-            
-
     def _return(self, arg):
         val_address = self.sem_stack.pop()
         print(f'Return value: {self.return_val_address}')
         #self.pb_write(f'(ASSIGN, {return_val_address}, 4, )')
-        self.pb_write(f'(SUB, 8, #4, 8)')
-        self.pb_write(f'(ASSIGN, @8, 20, )') # We use address 20 as a temp register 
+        self.pb_write(f'(SUB, 8, #8, 8)')
+        self.pb_write(f'(SUB, 12, #8, 12)')
+        self.pb_write(f'(ASSIGN, @8, 20, )') # We use address 20 as a temp register
+        # @return value which equals @return_address + 4 
         # Write to return value register
-        self.pb_write(f'(ASSIGN, {val_address}, 4, )')
+        self.pb_write(f'(ASSIGN, {val_address}, @12, )')
         # Jump to return_address
         self.pb_write(f'(JP, @20, , )')
     
     def return_void(self, arg):
         # We just assume to return 0 instead of nothing
-        self.pb_write(f'(ASSIGN, #0, 16, )') # Address 16 reserved for this purpose
-        self.sem_stack.append(16)
+        self.pb_write(f'(ASSIGN, #0, 80, )') # Address 80 reserved for this purpose
+        self.pb_write(f'(ASSIGN, #80, @12, )')
+        self.sem_stack.append(80)
     
     def label_func(self, arg):
         func_name = arg
@@ -428,7 +438,7 @@ class Semantics:
         func_address = self.cur_scope
         arr_name = self.last_id
         # Mark parameter as an array
-        print(f'Making param arr - arr_name: {arr_name} - func_address: {func_address}')
+        #print(f'Making param arr - arr_name: {arr_name} - func_address: {func_address}')
         (self.data[func_address][arr_name]).makeArray()
         
         
