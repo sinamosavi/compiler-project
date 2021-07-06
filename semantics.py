@@ -62,8 +62,8 @@ class Semantics:
         self.pb_index = 0
         # Addresses 8 and 20 reserved for the stack pointer, 4 for return value
         self.cur_data_address = 200
-        self.cur_temp_address = 1000
-        self.stack_address = 5000
+        self.cur_temp_address = 5000
+        self.stack_address = 20000
         self.sem_stack = [] # Semantic stack
         self.pb = [] # Program block
         self.temporaries = {}
@@ -112,6 +112,15 @@ class Semantics:
         output = open('output.txt', 'w')
         for i, b in enumerate(self.pb):
                 output.write(f'{i}\t{b}\n')
+
+    def find_name(self, address, scope):
+        scope_data = self.data[scope]
+        name = '__unknown__'
+        for key, value in scope_data.items():
+            if value.address == address:
+                name = f'{key}'
+                break
+        return name
     
     def pop(self, arg):
         self.sem_stack.pop()
@@ -412,7 +421,13 @@ class Semantics:
                 passed_address = self.sem_stack.pop()
                 
                 if(arg_symbol.type == 'arr'):
-                    self.pb_write(f'(ASSIGN, #{passed_address}, {arg_address}, )')
+                    arr_name = self.find_name(passed_address, self.cur_scope)
+                    # If we're passing an array that has been passed to this func, we need to pass the address that was passed to this func
+                    if(arr_name in self.func_args[self.cur_scope]):
+                        self.pb_write(f'(ASSIGN, {passed_address}, {arg_address}, )')
+                    # Otherwise we will pass the array address itself
+                    else:
+                        self.pb_write(f'(ASSIGN, #{passed_address}, {arg_address}, )')
                 else:
                     self.pb_write(f'(ASSIGN, {passed_address}, {arg_address}, )')
                     
